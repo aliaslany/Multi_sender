@@ -1,36 +1,51 @@
-# Divar Telegram Bot
+# Hydra Sender
 
-A scheduled crawler and notifier for [Divar](https://divar.ir) (Iran's largest classifieds app) that watches one or more cities/categories for new listings and posts them — with rich details, auto-generated hashtags, and optional "likely sold/rented" alerts — to a Telegram chat or channel.
+A scheduled crawler-and-notifier **template**: point it at a *source* (a site/API to poll for new listings) and it delivers each new item — with rich details and auto-generated hashtags — to any number of *senders* (Telegram, Bale, Rubika, Eitaa, or a new one you add).
 
-> This is a heavily modified fork of [debMan/divar-telegram-bot](https://github.com/debMan/divar-telegram-bot) (originally [ehcaning/divar-telegram-bot](https://github.com/ehcaning/divar-telegram-bot)). Divar changed its unofficial API since the original project was written, so the crawling logic, project structure, and feature set here are substantially different.
+Ships with a working [Divar](https://divar.ir) (Iran's largest classifieds app) source out of the box, but the source and messenger layers are decoupled behind small interfaces, so this repo is meant to be forked and pointed at a different listing source without touching the delivery logic.
+
+> The Divar source is a heavily modified fork of [debMan/divar-telegram-bot](https://github.com/debMan/divar-telegram-bot) (originally [ehcaning/divar-telegram-bot](https://github.com/ehcaning/divar-telegram-bot)). Divar changed its unofficial API since the original project was written, so the crawling logic here is substantially different.
 
 ## Features
 
 - **Runs on GitHub Actions** — no server to host or pay for. A scheduled workflow runs the bot every few minutes.
-- **Multi-city search** — search across several cities at once (`SEARCH_CITY_IDS`).
-- **Rich ad details** — pulls structured fields Divar shows on the ad page (area, room count, capacity, nightly rates, amenities, etc.), not just title/price/description.
-- **Auto-generated hashtags** — combines:
-  - keyword-based tags detected in the ad text (property type, known local areas, deal type)
-  - Divar's own breadcrumb category chain (e.g. `#اجارهٔ_کوتاه_مدت_ویلا_و_باغ`)
+- **Source/sender decoupled** — `main.py` only talks to a `Source` interface and a list of `Sender`s; neither knows the other exists (see [Architecture](#architecture)).
+- **Multi-city search** *(Divar source)* — search across several cities at once (`SEARCH_CITY_IDS`).
+- **Rich item details** *(Divar source)* — pulls structured fields Divar shows on the item page (area, room count, capacity, nightly rates, amenities, etc.), not just title/price/description.
+- **Auto-generated hashtags** *(Divar source)* — combines keyword-based tags detected in the item text with Divar's own breadcrumb category chain.
 - **Channel-ready formatting** — sends photos/albums with an HTML-formatted caption and a fixed contact/footer block, no direct outbound link.
-- **"Likely sold/rented" alerts** *(optional, heuristic)* — periodically rechecks previously-posted ads and notifies the channel if one seems to have disappeared from Divar.
-- **Admin-controlled filters** *(optional)* — authorized admins can DM the bot commands to change which cities/category it searches, without touching the repo.
+- **Multi-messenger delivery** — Telegram gets rich photo/album delivery; Bale, Rubika, and Eitaa get text + first-image delivery. Per-platform delivery is tracked independently, so a failure on one platform doesn't block or duplicate on the others.
 
-## Project structure
+## Architecture
 
 ```
-main.py             # entry point / orchestration
-config.py           # env vars and constants (search filters, footer text, etc.)
-divar_client.py      # talks to Divar's API, extracts ad fields
-hashtags.py          # keyword + breadcrumb hashtag generation
-telegram_client.py   # Telegram formatting and rich-media delivery
-messenger_client.py  # Bale, Rubika, and Eitaa text delivery
-storage.py            # tokens.json state (per-messenger delivery tracking)
-admin_commands.py    # optional: admin DM commands for changing filters
-status_checker.py    # optional: re-checks old ads for removal
+main.py                 # entry point - wires one Source to N Senders, then runs one pass
+core/
+  models.py              # Item - the generic shape every source produces and every sender consumes
+  orchestrator.py         # the polling loop itself: fetch new ids -> fetch each item -> deliver -> save state
+sources/
+  base.py                 # Source interface: fetch_new_ids(), fetch_item(id)
+  registry.py              # SOURCE_TYPE env var -> Source instance
+  divar/                   # the built-in Divar source
+    client.py                # DivarSource - maps Divar's API response onto Item
+    _raw_client.py           # low-level Divar API calls + parsing
+    hashtags.py              # Divar-specific hashtag generation
+senders/
+  base.py                  # Sender interface: enabled(), send(item)
+  registry.py                # lists all built-in senders, filters to configured ones
+  formatting.py               # Item -> message text, shared across senders
+  telegram.py, bale.py, rubika.py, eitaa.py
+  http_helpers.py             # shared HTTP plumbing for the Bot-API-style senders
+  text_utils.py                # message-length chunking helpers
+storage.py               # tokens.json state (per-sender delivery tracking), source-agnostic
+config.py                # env vars and constants
 requirements.txt
 .github/workflows/run-bot.yml
 ```
+
+**Adding a new listing source** (e.g. another classifieds site, an RSS feed, a Twitter search): create `sources/<name>/client.py` exporting a `SOURCE` instance whose class implements `fetch_new_ids()` and `fetch_item(id) -> Item | None`. Register it in `sources/registry.py`, then set `SOURCE_TYPE=<name>`. Nothing else in the repo needs to change — every sender already speaks `Item`.
+
+**Adding a new sender** (e.g. Discord, WhatsApp, a webhook): create `senders/<name>.py` with a class implementing `enabled()` and `async send(item) -> bool`. Register an instance in `senders/registry.py`. It'll be picked up automatically once its config env vars are set.
 
 ## How it works
 
@@ -72,7 +87,8 @@ Go to **Settings → Secrets and variables → Actions** in your fork and add:
 | `RUBIKA_CHATID` | optional | | Rubika destination chat/channel |
 | `EITAA_TOKEN` | optional | | EitaaYar API token |
 | `EITAA_CHATID` | optional | | Eitaa destination chat/channel |
-| `SEARCH_CITY_IDS` | ✅ | `823,1996,1999` | Comma-separated numeric city IDs |
+| `SOURCE_TYPE` | optional | `divar` | Which source to poll (see `sources/registry.py`); defaults to `divar` |
+| `SEARCH_CITY_IDS` | ✅ | `823,1996,1999` | Comma-separated numeric city IDs (Divar source only) |
 | `SEARCH_CATEGORY` | ✅ | `real-estate` | Divar category slug |
 | `PROXY_URL` | optional | | Only needed if your runner can't reach Divar/Telegram directly |
 | `ADMIN_USER_IDS` | optional | `111111,222222` | Telegram numeric user IDs allowed to change filters via DM (see below) |
@@ -112,8 +128,8 @@ Changes take effect starting the *next* scheduled run and only affect future sea
 ## Local development
 
 ```bash
-git clone https://github.com/<your-username>/divar-teleg-bot.git
-cd divar-teleg-bot
+git clone https://github.com/<your-username>/hydra-sender.git
+cd hydra-sender
 pip install -r requirements.txt
 export BOT_TOKEN=...
 export BOT_CHATID=...

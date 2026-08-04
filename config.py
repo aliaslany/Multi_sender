@@ -1,6 +1,9 @@
 """Central place for environment-driven configuration and constants."""
 import os
 
+# Which source module to poll for new listings. See sources/registry.py.
+SOURCE_TYPE = os.environ.get("SOURCE_TYPE", "divar")
+
 DIVAR_SEARCH_URL = "https://api.divar.ir/v8/postlist/w/search"
 DIVAR_POST_DETAIL_URL = "https://api.divar.ir/v8/posts-v2/web/{token}"
 
@@ -45,11 +48,13 @@ REQUEST_HEADERS = {
     "x-standard-divar-error": "true",
 }
 
-# Fixed footer appended to every outgoing Telegram message.
-FOOTER_TEXT = (
+# Fixed footer appended to every outgoing message, across all senders.
+# Override via env var so forks of this template don't have to edit code.
+FOOTER_TEXT = os.environ.get(
+    "FOOTER_TEXT",
     "\n\n📞 شماره تماس جهت هماهنگی:\n"
     "09922434338\n"
     "\u200c\n"
     "📢 [علی‌آباد مِلک | اولین مرجع املاک علی‌آباد کتول]\n"
-    "🆔 @aliabadmelk"
+    "🆔 @aliabadmelk",
 )
