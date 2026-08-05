@@ -34,7 +34,9 @@ senders/
   base.py                  # Sender interface: enabled(), send(item)
   registry.py                # lists all built-in senders, filters to configured ones
   formatting.py               # Item -> message text, shared across senders
-  telegram.py, bale.py, rubika.py, eitaa.py
+  telegram.py                  # via python-telegram-bot
+  rubika.py                     # via the rubka library (one-shot async calls, no polling loop)
+  bale.py, eitaa.py              # raw HTTP - no maintained one-shot library fit these; see note below
   http_helpers.py             # shared HTTP plumbing for the Bot-API-style senders
   text_utils.py                # message-length chunking helpers
 storage.py               # tokens.json state (per-sender delivery tracking), source-agnostic
@@ -46,6 +48,8 @@ requirements.txt
 **Adding a new listing source** (e.g. another classifieds site, an RSS feed, a Twitter search): create `sources/<name>/client.py` exporting a `SOURCE` instance whose class implements `fetch_new_ids()` and `fetch_item(id) -> Item | None`. Register it in `sources/registry.py`, then set `SOURCE_TYPE=<name>`. Nothing else in the repo needs to change — every sender already speaks `Item`.
 
 **Adding a new sender** (e.g. Discord, WhatsApp, a webhook): create `senders/<name>.py` with a class implementing `enabled()` and `async send(item) -> bool`. Register an instance in `senders/registry.py`. It'll be picked up automatically once its config env vars are set.
+
+**Why Bale and Eitaa use raw HTTP instead of a library:** `python-bale-bot` exists, but its `Bot.connect()` starts an infinite long-polling loop before its HTTP session is usable - it's built for a bot that stays running, not a one-shot cron job, so pulling it in here would mean depending on undocumented private internals. No maintained Eitaa library exists at all. Rubika's `rubka` library, by contrast, makes plain one-shot async calls with no polling step, so it's a clean fit and is used in `rubika.py`.
 
 ## How it works
 
