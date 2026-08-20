@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Git
+.git
+.gitignore
+
+# Local data
+tokens.json
+
+# IDE
+.vscode/
+.idea/
