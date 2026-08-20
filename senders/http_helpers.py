@@ -37,7 +37,7 @@ def send_http_message(name: str, url: str, chat_id: str, text: str, limit: int =
     return ok
 
 
-def download_image_bytes(url: str) -> bytes | None:
+def download_bytes(url: str) -> bytes | None:
     try:
         response = requests.get(url, timeout=config.MESSENGER_REQUEST_TIMEOUT)
         response.raise_for_status()

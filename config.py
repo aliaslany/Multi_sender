@@ -16,6 +16,17 @@ RUBIKA_CHATID = os.environ.get("RUBIKA_CHATID")
 EITAA_TOKEN = os.environ.get("EITAA_TOKEN")
 EITAA_CHATID = os.environ.get("EITAA_CHATID")
 
+# Which Telegram chats the telegram_relay source will accept posts from -
+# your own user id (for DMing the bot) and/or a channel's numeric id
+# (e.g. -1001234567890, for the bot reading channel posts as an admin).
+# Comma-separated. Required for telegram_relay - without it the source
+# refuses to guess and processes nothing, so a stray DM can't get relayed.
+TELEGRAM_RELAY_CHAT_IDS = [
+    int(c.strip())
+    for c in os.environ.get("TELEGRAM_RELAY_CHAT_IDS", "").split(",")
+    if c.strip()
+]
+
 BALE_API_BASE_URL = os.environ.get("BALE_API_BASE_URL", "https://tapi.bale.ai")
 RUBIKA_API_BASE_URL = os.environ.get(
     "RUBIKA_API_BASE_URL", "https://botapi.rubika.ir/v3"

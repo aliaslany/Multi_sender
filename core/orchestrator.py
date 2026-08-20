@@ -1,6 +1,7 @@
 """Fetch new items from the configured source and deliver each to every
-configured sender. Knows nothing about Divar, Telegram, Bale, etc.
-specifically - it only talks to the Source and Sender interfaces.
+configured sender allowed for that source. Knows nothing about Divar,
+Telegram, Bale, etc. specifically - it only talks to the Source and Sender
+interfaces.
 """
 import asyncio
 import datetime
@@ -24,13 +25,12 @@ async def _deliver(item, senders: list[Sender], destinations: list[str]) -> dict
     return outcomes
 
 
-async def process_items(item_ids, state, source: Source, senders: list[Sender]):
-    sender_names = [s.name for s in senders]
+async def process_items(item_ids, state, source: Source, senders: list[Sender], sender_names: list[str]):
     for item_id in item_ids:
         item = source.fetch_item(item_id)
         if not item:
             continue
-        print("ITEM - {} - {}".format(item_id, item.title))
+        print("ITEM - {} - {}".format(item_id, item.title or item.raw_text or item_id))
 
         delivered = state["delivered"]
         destinations = [name for name in sender_names if item_id not in delivered.get(name, [])]
@@ -49,17 +49,26 @@ async def process_items(item_ids, state, source: Source, senders: list[Sender]):
 
 def run(source: Source, senders: list[Sender]):
     print("Started at {}.".format(datetime.datetime.now()))
-    if not senders:
-        raise RuntimeError("Configure at least one sender's token and chat ID.")
+
+    sender_names = [s.name for s in senders]
+    if source.target_senders is not None:
+        sender_names = [name for name in sender_names if name in source.target_senders]
+    if not sender_names:
+        raise RuntimeError(
+            "No configured sender is allowed for source '{}' "
+            "(target_senders={}). Configure at least one of them.".format(
+                source.name, source.target_senders
+            )
+        )
 
     state = load_state()
+    state.setdefault("source_state", {})
     known_ids = set(state["known_tokens"])
     print("Known items: {}".format(len(known_ids)))
 
-    new_ids = source.fetch_new_ids()
+    new_ids = source.fetch_new_ids(state)
     print("Fetched {} items from {} this run.".format(len(new_ids), source.name))
 
-    sender_names = [s.name for s in senders]
     pending_ids = [
         item_id
         for item_id in new_ids
@@ -68,7 +77,7 @@ def run(source: Source, senders: list[Sender]):
     ]
     print("{} items need delivery this run.".format(len(pending_ids)))
 
-    asyncio.run(process_items(pending_ids, state, source, senders))
+    asyncio.run(process_items(pending_ids, state, source, senders, sender_names))
 
     save_state(state)
     print("Finished at {}.".format(datetime.datetime.now()))

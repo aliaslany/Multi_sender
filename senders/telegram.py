@@ -36,20 +36,21 @@ class TelegramSender(Sender):
 
         text = build_message_text(item, escape=True)
         fits_as_caption = len(text) <= TELEGRAM_CAPTION_LIMIT
+        photos = [m.url for m in item.media if m.type == "photo"]
 
         try:
-            if item.images:
+            if photos:
                 caption = text if fits_as_caption else build_short_caption(item, escape=True)
 
-                if len(item.images) == 1:
+                if len(photos) == 1:
                     await _bot.send_photo(
                         caption=caption,
-                        photo=item.images[0],
+                        photo=photos[0],
                         chat_id=config.BOT_CHATID,
                         parse_mode="HTML",
                     )
                 else:
-                    media_list = [telegram.InputMediaPhoto(img) for img in item.images[:10]]
+                    media_list = [telegram.InputMediaPhoto(img) for img in photos[:10]]
                     try:
                         await _bot.send_media_group(
                             caption=caption,

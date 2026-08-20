@@ -24,13 +24,15 @@ class RubikaSender(Sender):
         bot = Robot(token=config.RUBIKA_BOT_TOKEN, raise_errors=False, parse_mode=None)
         plain_text = build_message_text(item, escape=False)
         fits_as_caption = len(plain_text) <= DEFAULT_MESSAGE_LIMIT
+        media = item.media[0] if item.media else None
 
         try:
-            if item.images:
+            if media:
                 caption = plain_text if fits_as_caption else build_short_caption(item, escape=False)
-                result = await bot.send_image(config.RUBIKA_CHATID, path=item.images[0], text=caption)
+                send = bot.send_video if media.type == "video" else bot.send_image
+                result = await send(config.RUBIKA_CHATID, path=media.url, text=caption)
                 if not result:
-                    print("Rubika: image send failed, falling back to text-only.")
+                    print("Rubika: {} send failed, falling back to text-only.".format(media.type))
                     fits_as_caption = False
                 elif fits_as_caption:
                     print("Sent item to Rubika.")

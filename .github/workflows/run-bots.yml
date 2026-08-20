@@ -30,10 +30,12 @@ jobs:
         run: echo "SEARCH_CONDITIONS is set:" && [ -n "$SEARCH_CONDITIONS" ] && echo "yes" || echo "NO - EMPTY"
       - name: Run bot
         env:
+          SOURCE_TYPE: ${{ secrets.SOURCE_TYPE }}
           SEARCH_CITY_IDS: ${{ secrets.SEARCH_CITY_IDS }}   # <-- تغییر از SEARCH_CITY_ID
           SEARCH_CATEGORY: ${{ secrets.SEARCH_CATEGORY }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           BOT_CHATID: ${{ secrets.BOT_CHATID }}
+          TELEGRAM_RELAY_CHAT_IDS: ${{ secrets.TELEGRAM_RELAY_CHAT_IDS }}
           BALE_BOT_TOKEN: ${{ secrets.BALE_BOT_TOKEN }}
           BALE_CHATID: ${{ secrets.BALE_CHATID }}
           RUBIKA_BOT_TOKEN: ${{ secrets.RUBIKA_BOT_TOKEN }}

@@ -24,12 +24,14 @@ core/
   models.py              # Item - the generic shape every source produces and every sender consumes
   orchestrator.py         # the polling loop itself: fetch new ids -> fetch each item -> deliver -> save state
 sources/
-  base.py                 # Source interface: fetch_new_ids(), fetch_item(id)
+  base.py                 # Source interface: fetch_new_ids(state), fetch_item(id), target_senders
   registry.py              # SOURCE_TYPE env var -> Source instance
-  divar/                   # the built-in Divar source
+  divar/                   # the built-in Divar source (structured listings -> templated message)
     client.py                # DivarSource - maps Divar's API response onto Item
     _raw_client.py           # low-level Divar API calls + parsing
     hashtags.py              # Divar-specific hashtag generation
+  telegram_relay/          # Telegram itself as the source (see "Telegram-relay source" below)
+    client.py                # TelegramRelaySource - polls getUpdates, relays to Rubika/Eitaa only
 senders/
   base.py                  # Sender interface: enabled(), send(item)
   registry.py                # lists all built-in senders, filters to configured ones
@@ -45,11 +47,30 @@ requirements.txt
 .github/workflows/run-bot.yml
 ```
 
-**Adding a new listing source** (e.g. another classifieds site, an RSS feed, a Twitter search): create `sources/<name>/client.py` exporting a `SOURCE` instance whose class implements `fetch_new_ids()` and `fetch_item(id) -> Item | None`. Register it in `sources/registry.py`, then set `SOURCE_TYPE=<name>`. Nothing else in the repo needs to change — every sender already speaks `Item`.
+**Adding a new listing source** (e.g. another classifieds site, an RSS feed, a Twitter search): create `sources/<name>/client.py` exporting a `SOURCE` instance whose class implements `fetch_new_ids(state)` and `fetch_item(id) -> Item | None`. Register it in `sources/registry.py`, then set `SOURCE_TYPE=<name>`. Nothing else in the repo needs to change — every sender already speaks `Item`. If your source needs to remember a cursor between runs (like `telegram_relay`'s update offset), read/write `state["source_state"][self.name]` inside `fetch_new_ids` — it's persisted to `tokens.json` automatically.
+
+**Two kinds of Item content:** Divar's items are structured listing data (price, features, etc.) that senders template into a message. Not every source is like that — `telegram_relay` relays an already-written Telegram post as-is. Set `Item.raw_text` and senders will send that text verbatim instead of building the Divar-style template around it.
+
+**Restricting delivery per source:** set a `Source.target_senders` list (e.g. `["rubika", "eitaa"]`) if a source's items shouldn't go to every configured sender — `telegram_relay` uses this since the post already exists on Telegram itself. Leave it `None` (the default) to deliver to every configured sender, like Divar does.
 
 **Adding a new sender** (e.g. Discord, WhatsApp, a webhook): create `senders/<name>.py` with a class implementing `enabled()` and `async send(item) -> bool`. Register an instance in `senders/registry.py`. It'll be picked up automatically once its config env vars are set.
 
 **Why Bale and Eitaa use raw HTTP instead of a library:** `python-bale-bot` exists, but its `Bot.connect()` starts an infinite long-polling loop before its HTTP session is usable - it's built for a bot that stays running, not a one-shot cron job, so pulling it in here would mean depending on undocumented private internals. No maintained Eitaa library exists at all. Rubika's `rubka` library, by contrast, makes plain one-shot async calls with no polling step, so it's a clean fit and is used in `rubika.py`.
+
+## Telegram-relay source
+
+`SOURCE_TYPE=telegram_relay` turns the idea around: instead of crawling a listings site, your own Telegram bot *is* the source. Send it a post — a photo or video with a caption, either as a DM to the bot or as a channel post in a channel where the bot is an admin — and it gets mirrored to Rubika and Eitaa. Telegram itself is skipped as a delivery target since the post is already there.
+
+**Setup:**
+1. Use the same bot from [step 1](#1-create-your-bot) (or a separate one) - it needs `BOT_TOKEN` set either way.
+2. To relay channel posts: add the bot as an **admin** of the channel (Channel → Administrators → Add Admin). It doesn't need special permissions beyond reading messages.
+3. Get the numeric chat ID(s) you want to accept posts from:
+   - Your own user id, for DMing the bot directly — message [`@userinfobot`](https://t.me/userinfobot).
+   - A channel's numeric id (looks like `-1001234567890`) — forward a message from the channel to [`@userinfobot`](https://t.me/userinfobot), or check the bot's `getUpdates` response after posting once.
+4. Set `TELEGRAM_RELAY_CHAT_IDS` to a comma-separated list of those ids (e.g. `123456789,-1001234567890`). **This is required** — without it the source processes nothing, so a stray DM from someone else can't get relayed to your channels.
+5. Set `SOURCE_TYPE=telegram_relay` as a repository secret.
+
+**Known limitation:** Telegram sends each photo of a multi-photo album as a separate update. This source currently treats every message as its own post, so an album becomes several separate posts on Rubika/Eitaa rather than one grouped album. Fine for single photo/video posts; grouping by `media_group_id` would be the natural next step if you post albums often.
 
 ## How it works
 
@@ -92,6 +113,7 @@ Go to **Settings → Secrets and variables → Actions** in your fork and add:
 | `EITAA_TOKEN` | optional | | EitaaYar API token |
 | `EITAA_CHATID` | optional | | Eitaa destination chat/channel |
 | `SOURCE_TYPE` | optional | `divar` | Which source to poll (see `sources/registry.py`); defaults to `divar` |
+| `TELEGRAM_RELAY_CHAT_IDS` | required for `telegram_relay` | `123456789,-1001234567890` | Comma-separated chat ids allowed to post through the relay (see [Telegram-relay source](#telegram-relay-source)) |
 | `SEARCH_CITY_IDS` | ✅ | `823,1996,1999` | Comma-separated numeric city IDs (Divar source only) |
 | `SEARCH_CATEGORY` | ✅ | `real-estate` | Divar category slug |
 | `PROXY_URL` | optional | | Only needed if your runner can't reach Divar/Telegram directly |

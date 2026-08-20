@@ -22,15 +22,16 @@ class BaleSender(Sender):
 
         fits_as_caption = len(html_text) <= TELEGRAM_CAPTION_LIMIT
         caption = html_text if fits_as_caption else build_short_caption(item, escape=True)
+        photos = [m.url for m in item.media if m.type == "photo"]
 
-        if item.images:
+        if photos:
             send_photo_url = "{}/bot{}/sendPhoto".format(base_url, config.BALE_BOT_TOKEN)
             photo_sent, _ = post_json(
                 "Bale photo",
                 send_photo_url,
                 {
                     "chat_id": config.BALE_CHATID,
-                    "photo": item.images[0],
+                    "photo": photos[0],
                     "caption": caption,
                     "parse_mode": "HTML",
                 },
