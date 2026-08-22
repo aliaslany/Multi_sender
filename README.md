@@ -1,183 +1,168 @@
-# Hydra Sender
+# هیدرا سندر (Hydra Sender)
 
-A scheduled crawler-and-notifier **template**: point it at a *source* (a site/API to poll for new listings) and it delivers each new item — with rich details and auto-generated hashtags — to any number of *senders* (Telegram, Bale, Rubika, Eitaa, or a new one you add).
+[English README →](README.en.md)
 
-Ships with a working [Divar](https://divar.ir) (Iran's largest classifieds app) source out of the box, but the source and messenger layers are decoupled behind small interfaces, so this repo is meant to be forked and pointed at a different listing source without touching the delivery logic.
+یک **قالب** برای ربات‌های خزنده و اطلاع‌رسانِ زمان‌بندی‌شده: آن را به یک *منبع* (یک سایت/API که برای آگهی‌های جدید بررسی می‌کنید) وصل می‌کنید و هر مورد جدید — همراه با جزئیات کامل و هشتگ‌های خودکار — به هر تعداد *گیرنده* (تلگرام، بله، روبیکا، ایتا یا هرکدام که خودتان اضافه کنید) ارسال می‌شود.
 
-> The Divar source is a heavily modified fork of [debMan/divar-telegram-bot](https://github.com/debMan/divar-telegram-bot) (originally [ehcaning/divar-telegram-bot](https://github.com/ehcaning/divar-telegram-bot)). Divar changed its unofficial API since the original project was written, so the crawling logic here is substantially different.
+به‌صورت پیش‌فرض یک منبع [دیوار](https://divar.ir) کاملاً کاربردی دارد، اما لایهٔ منبع و لایهٔ ارسال‌کننده‌ها از طریق دو رابط سادهٔ برنامه‌نویسی (interface) کاملاً از هم جدا شده‌اند. یعنی می‌توانید این ریپازیتوری را فورک کنید و به یک منبع دیگر وصلش کنید، بدون اینکه لازم باشد منطق ارسال را دست بزنید.
 
-## Features
+> منبع دیوار، نسخهٔ به‌شدت تغییریافته‌ای از [debMan/divar-telegram-bot](https://github.com/debMan/divar-telegram-bot) (که خودش از [ehcaning/divar-telegram-bot](https://github.com/ehcaning/divar-telegram-bot) گرفته شده) است. از زمان نوشته‌شدن پروژهٔ اصلی، API غیررسمی دیوار تغییر کرده، بنابراین منطق خزیدن اینجا کاملاً متفاوت است.
 
-- **Runs on GitHub Actions** — no server to host or pay for. A scheduled workflow runs the bot every few minutes.
-- **Source/sender decoupled** — `main.py` only talks to a `Source` interface and a list of `Sender`s; neither knows the other exists (see [Architecture](#architecture)).
-- **Multi-city search** *(Divar source)* — search across several cities at once (`SEARCH_CITY_IDS`).
-- **Rich item details** *(Divar source)* — pulls structured fields Divar shows on the item page (area, room count, capacity, nightly rates, amenities, etc.), not just title/price/description.
-- **Auto-generated hashtags** *(Divar source)* — combines keyword-based tags detected in the item text with Divar's own breadcrumb category chain.
-- **Channel-ready formatting** — sends photos/albums with an HTML-formatted caption and a fixed contact/footer block, no direct outbound link.
-- **Multi-messenger delivery** — Telegram gets rich photo/album delivery; Bale, Rubika, and Eitaa get text + first-image delivery. Per-platform delivery is tracked independently, so a failure on one platform doesn't block or duplicate on the others.
+## امکانات
 
-## Architecture
+- **روی گیت‌هاب اکشنز اجرا می‌شود** — نیازی به هاست یا سرور جداگانه نیست. یک ورک‌فلوی زمان‌بندی‌شده ربات را هر چند دقیقه یک‌بار اجرا می‌کند.
+- **جداسازی منبع از گیرنده** — `main.py` فقط با یک رابط `Source` و لیستی از `Sender`ها صحبت می‌کند؛ هیچ‌کدام از وجود دیگری خبر ندارند (به بخش [معماری](#معماری) نگاه کنید).
+- **جست‌وجوی چندشهری** *(منبع دیوار)* — جست‌وجوی هم‌زمان در چند شهر (`SEARCH_CITY_IDS`).
+- **جزئیات کامل آگهی** *(منبع دیوار)* — فیلدهای ساختاریافته‌ای که خود صفحهٔ آگهی در دیوار نشان می‌دهد (متراژ، تعداد اتاق، ظرفیت، نرخ شبانه و امکانات) را می‌گیرد، نه فقط عنوان/قیمت/توضیحات.
+- **هشتگ خودکار** *(منبع دیوار)* — ترکیبی از هشتگ‌های مبتنی بر کلیدواژه در متن آگهی و مسیر دسته‌بندی خود دیوار.
+- **قالب‌بندی آمادهٔ کانال** — عکس‌ها/آلبوم‌ها را با کپشن HTML و یک بلوک تماس/فوتر ثابت ارسال می‌کند، بدون لینک مستقیم خروجی.
+- **ارسال چندپیام‌رسانه‌ای** — تلگرام عکس/آلبوم کامل دریافت می‌کند؛ بله، روبیکا و ایتا متن + اولین عکس. وضعیت تحویل هر پلتفرم جدا پیگیری می‌شود، پس شکست در یک پلتفرم مانع یا باعث تکرار در بقیه نمی‌شود.
+
+## معماری
 
 ```
-main.py                 # entry point - wires one Source to N Senders, then runs one pass
+main.py                 # نقطهٔ ورود - یک Source را به چند Sender وصل می‌کند و یک بار اجرا می‌کند
 core/
-  models.py              # Item - the generic shape every source produces and every sender consumes
-  orchestrator.py         # the polling loop itself: fetch new ids -> fetch each item -> deliver -> save state
+  models.py              # Item - ساختار عمومی که هر منبع تولید و هر گیرنده مصرف می‌کند
+  orchestrator.py         # حلقهٔ اصلی: گرفتن شناسه‌های جدید -> گرفتن هر آیتم -> ارسال -> ذخیرهٔ وضعیت
 sources/
-  base.py                 # Source interface: fetch_new_ids(state), fetch_item(id), target_senders
-  registry.py              # SOURCE_TYPE env var -> Source instance
-  divar/                   # the built-in Divar source (structured listings -> templated message)
-    client.py                # DivarSource - maps Divar's API response onto Item
-    _raw_client.py           # low-level Divar API calls + parsing
-    hashtags.py              # Divar-specific hashtag generation
-  telegram_relay/          # Telegram itself as the source (see "Telegram-relay source" below)
-    client.py                # TelegramRelaySource - polls getUpdates, relays to Rubika/Eitaa only
+  base.py                 # رابط Source: ‎fetch_new_ids(state)‎, ‎fetch_item(id)‎, ‎target_senders‎
+  registry.py              # متغیر محیطی SOURCE_TYPE -> نمونهٔ Source
+  divar/                   # منبع آماده دیوار (آگهی ساختاریافته -> پیام قالب‌بندی‌شده)
+    client.py                # DivarSource - پاسخ API دیوار را به Item تبدیل می‌کند
+    _raw_client.py           # فراخوانی‌های سطح‌پایین API دیوار + پارس کردن
+    hashtags.py              # تولید هشتگ مخصوص دیوار
+  telegram_relay/          # خودِ تلگرام به‌عنوان منبع (به بخش «منبع رله تلگرام» پایین‌تر نگاه کنید)
+    client.py                # TelegramRelaySource - با getUpdates گوش می‌دهد و فقط به روبیکا/ایتا رله می‌کند
+    quotes.py                 # گرفتن یک نقل‌قول طبیعت فارسی تصادفی برای پیوست به هر پست رله‌شده
 senders/
-  base.py                  # Sender interface: enabled(), send(item)
-  registry.py                # lists all built-in senders, filters to configured ones
-  formatting.py               # Item -> message text, shared across senders
-  telegram.py                  # via python-telegram-bot
-  rubika.py                     # via the rubka library (one-shot async calls, no polling loop)
-  bale.py, eitaa.py              # raw HTTP - no maintained one-shot library fit these; see note below
-  http_helpers.py             # shared HTTP plumbing for the Bot-API-style senders
-  text_utils.py                # message-length chunking helpers
-storage.py               # tokens.json state (per-sender delivery tracking), source-agnostic
-config.py                # env vars and constants
+  base.py                  # رابط Sender: ‎enabled()‎, ‎send(item)‎
+  registry.py                # لیست همهٔ گیرنده‌های داخلی و فیلتر آن‌هایی که پیکربندی شده‌اند
+  formatting.py               # Item -> متن پیام، مشترک بین همهٔ گیرنده‌ها
+  telegram.py                  # از طریق python-telegram-bot
+  rubika.py                     # از طریق کتابخانهٔ rubka (تماس‌های یک‌بارهٔ async، بدون حلقهٔ polling)
+  bale.py, eitaa.py              # HTTP خام - هیچ کتابخانهٔ یک‌بارهٔ مناسبی برای این دو پیدا نشد؛ توضیح پایین‌تر
+  http_helpers.py             # ابزارهای مشترک HTTP برای گیرنده‌های شبیه Bot API
+  text_utils.py                # ابزارهای تقسیم متن طولانی به چند پیام
+storage.py               # وضعیت tokens.json (پیگیری تحویل به تفکیک گیرنده)، مستقل از نوع منبع
+config.py                # متغیرهای محیطی و ثابت‌ها
 requirements.txt
-.github/workflows/run-bot.yml
+.github/workflows/run-bots.yml
 ```
 
-**Adding a new listing source** (e.g. another classifieds site, an RSS feed, a Twitter search): create `sources/<name>/client.py` exporting a `SOURCE` instance whose class implements `fetch_new_ids(state)` and `fetch_item(id) -> Item | None`. Register it in `sources/registry.py`, then set `SOURCE_TYPE=<name>`. Nothing else in the repo needs to change — every sender already speaks `Item`. If your source needs to remember a cursor between runs (like `telegram_relay`'s update offset), read/write `state["source_state"][self.name]` inside `fetch_new_ids` — it's persisted to `tokens.json` automatically.
+**اضافه کردن یک منبع جدید** (مثلاً یک سایت آگهی دیگر، یک فید RSS، جست‌وجوی توییتر): یک `sources/<name>/client.py` بسازید که یک نمونهٔ `SOURCE` صادر می‌کند و کلاسش `fetch_new_ids(state)` و `fetch_item(id) -> Item | None` را پیاده می‌کند. آن را در `sources/registry.py` ثبت کنید، سپس `SOURCE_TYPE=<name>` را تنظیم کنید. هیچ بخش دیگری از ریپازیتوری نیاز به تغییر ندارد — همهٔ گیرنده‌ها از قبل با `Item` صحبت می‌کنند. اگر منبع شما نیاز به نگه‌داشتن یک نشانگر/آفست بین اجراها دارد (مثل آفست آپدیت‌های `telegram_relay`)، داخل `fetch_new_ids` مقدار `state["source_state"][self.name]` را بخوانید/بنویسید — این مقدار به‌طور خودکار در `tokens.json` ذخیره می‌شود.
 
-**Two kinds of Item content:** Divar's items are structured listing data (price, features, etc.) that senders template into a message. Not every source is like that — `telegram_relay` relays an already-written Telegram post as-is. Set `Item.raw_text` and senders will send that text verbatim instead of building the Divar-style template around it.
+**دو نوع محتوای Item:** آیتم‌های دیوار داده‌های ساختاریافتهٔ آگهی هستند (قیمت، مشخصات و...) که گیرنده‌ها آن‌ها را در یک قالب می‌ریزند. همهٔ منابع این‌طور نیستند — `telegram_relay` یک پست از‌پیش‌نوشته‌شدهٔ تلگرام را همان‌طور که هست رله می‌کند. با تنظیم `Item.raw_text`، گیرنده‌ها همان متن را عیناً ارسال می‌کنند، بدون ساختن قالب دیواری دورش.
 
-**Restricting delivery per source:** set a `Source.target_senders` list (e.g. `["rubika", "eitaa"]`) if a source's items shouldn't go to every configured sender — `telegram_relay` uses this since the post already exists on Telegram itself. Leave it `None` (the default) to deliver to every configured sender, like Divar does.
+**محدود کردن مقصد ارسال بر اساس منبع:** با تنظیم لیست `Source.target_senders` (مثلاً `["rubika", "eitaa"]`) می‌توانید مشخص کنید که آیتم‌های یک منبع نباید به همهٔ گیرنده‌های پیکربندی‌شده بروند — `telegram_relay` از همین قابلیت استفاده می‌کند، چون خودِ پست از قبل در تلگرام موجود است. برای ارسال به همهٔ گیرنده‌ها (مثل دیوار) این مقدار را `None` (پیش‌فرض) بگذارید.
 
-**Adding a new sender** (e.g. Discord, WhatsApp, a webhook): create `senders/<name>.py` with a class implementing `enabled()` and `async send(item) -> bool`. Register an instance in `senders/registry.py`. It'll be picked up automatically once its config env vars are set.
+**اضافه کردن یک گیرندهٔ جدید** (مثلاً دیسکورد، واتساپ، یک وب‌هوک): یک `senders/<name>.py` بسازید با کلاسی که `enabled()` و `async send(item) -> bool` را پیاده می‌کند. یک نمونه از آن را در `senders/registry.py` ثبت کنید. به‌محض تنظیم متغیرهای محیطی موردنیازش، به‌طور خودکار شناسایی و استفاده می‌شود.
 
-**Why Bale and Eitaa use raw HTTP instead of a library:** `python-bale-bot` exists, but its `Bot.connect()` starts an infinite long-polling loop before its HTTP session is usable - it's built for a bot that stays running, not a one-shot cron job, so pulling it in here would mean depending on undocumented private internals. No maintained Eitaa library exists at all. Rubika's `rubka` library, by contrast, makes plain one-shot async calls with no polling step, so it's a clean fit and is used in `rubika.py`.
+**چرا بله و ایتا از HTTP خام استفاده می‌کنند نه یک کتابخانه:** کتابخانهٔ `python-bale-bot` وجود دارد، اما متد `Bot.connect()` آن قبل از این‌که نشست HTTP قابل‌استفاده شود، یک حلقهٔ polling بی‌نهایت را اجرا می‌کند - این کتابخانه برای رباتی طراحی شده که دائم در حال اجراست، نه یک اجرای یک‌بارهٔ کرون، بنابراین استفاده از آن یعنی وابستگی به جزئیات داخلی مستندنشده. برای ایتا هم هیچ کتابخانهٔ نگه‌داری‌شده‌ای وجود ندارد. در مقابل، کتابخانهٔ `rubka` برای روبیکا تماس‌های async یک‌باره و بدون مرحلهٔ polling دارد، بنابراین گزینهٔ مناسبی است و در `rubika.py` استفاده شده.
 
-## Telegram-relay source
+## منبع رله تلگرام (telegram_relay)
 
-`SOURCE_TYPE=telegram_relay` turns the idea around: instead of crawling a listings site, your own Telegram bot *is* the source. Send it a post — a photo or video with a caption, either as a DM to the bot or as a channel post in a channel where the bot is an admin — and it gets mirrored to Rubika and Eitaa. Telegram itself is skipped as a delivery target since the post is already there.
+با `SOURCE_TYPE=telegram_relay` کل ایده برعکس می‌شود: به‌جای خزیدن روی یک سایت آگهی، خودِ ربات تلگرام شما *منبع* است. یک پست برایش بفرستید — یک عکس یا ویدیو همراه با کپشن، چه به‌صورت پیام خصوصی به ربات و چه به‌صورت پست کانالی در کانالی که ربات در آن ادمین است — و همان پست به روبیکا و ایتا رله می‌شود. تلگرام از مقصدهای ارسال حذف می‌شود، چون پست از قبل همان‌جا موجود است.
 
-**Setup:**
-1. Use the same bot from [step 1](#1-create-your-bot) (or a separate one) - it needs `BOT_TOKEN` set either way.
-2. To relay channel posts: add the bot as an **admin** of the channel (Channel → Administrators → Add Admin). It doesn't need special permissions beyond reading messages.
-3. Get the numeric chat ID(s) you want to accept posts from:
-   - Your own user id, for DMing the bot directly — message [`@userinfobot`](https://t.me/userinfobot).
-   - A channel's numeric id (looks like `-1001234567890`) — forward a message from the channel to [`@userinfobot`](https://t.me/userinfobot), or check the bot's `getUpdates` response after posting once.
-4. Set `TELEGRAM_RELAY_CHAT_IDS` to a comma-separated list of those ids (e.g. `123456789,-1001234567890`). **This is required** — without it the source processes nothing, so a stray DM from someone else can't get relayed to your channels.
-5. Set `SOURCE_TYPE=telegram_relay` as a repository secret.
+**راه‌اندازی:**
+1. از همان رباتِ [مرحلهٔ ۱](#۱-ساخت-ربات) استفاده کنید (یا یک ربات جداگانه) - در هر صورت باید `BOT_TOKEN` تنظیم شده باشد.
+2. برای رله کردن پست‌های کانال: ربات را به‌عنوان **ادمین** کانال اضافه کنید (کانال ← مدیران ← افزودن مدیر). نیازی به دسترسی خاصی فراتر از خواندن پیام‌ها ندارد.
+3. شناسهٔ عددی چت‌هایی که می‌خواهید پست از آن‌ها پذیرفته شود را پیدا کنید:
+   - شناسهٔ کاربری خودتان، برای پیام‌دادن مستقیم به ربات — به [`@userinfobot`](https://t.me/userinfobot) پیام دهید.
+   - شناسهٔ عددی کانال (چیزی شبیه `-1001234567890‎`) — یک پیام از کانال را به [`@userinfobot`](https://t.me/userinfobot) فوروارد کنید، یا بعد از یک‌بار پست کردن، پاسخ `getUpdates` ربات را بررسی کنید.
+4. مقدار `TELEGRAM_RELAY_CHAT_IDS` را برابر لیستی از این شناسه‌ها با کاما جدا کنید (مثلاً `123456789,-1001234567890‎`). **این مقدار الزامی است** — بدون آن، منبع هیچ‌چیزی را پردازش نمی‌کند، تا یک پیام خصوصی ناخواسته از یک نفر دیگر به کانال‌های شما رله نشود.
+5. مقدار `SOURCE_TYPE=telegram_relay` را به‌عنوان یک سیکرت ریپازیتوری تنظیم کنید.
 
-**Nature quote + channel-links footer:** every relayed post gets a random Persian nature-themed quote appended (fetched at run time from the `tabiat.json` theme file of [aliaslany/persian-quotes](https://github.com/aliaslany/persian-quotes), no bundling needed), plus a "follow us elsewhere" footer linking back to the same content's Telegram/Bale/Rubika channels. Each sender renders the footer links in whatever markup that platform actually supports — real clickable links on Rubika (via HTML→Rubika-metadata conversion), plain `label: url` text on Eitaa (no rich-link support there). Configure via `CHANNEL_LINK_LABEL`, `TELEGRAM_CHANNEL_URL`, `BALE_CHANNEL_URL`, `RUBIKA_CHANNEL_URL`, and `NATURE_QUOTES_URL` (see the secrets table below) — leave any `*_CHANNEL_URL` empty to drop that platform from the footer.
+**نقل‌قول طبیعت + فوتر لینک کانال‌ها:** هر پست رله‌شده یک نقل‌قول تصادفی با موضوع طبیعت دریافت می‌کند (در لحظهٔ اجرا از فایل موضوعی `tabiat.json` در ریپازیتوری [aliaslany/persian-quotes](https://github.com/aliaslany/persian-quotes) گرفته می‌شود، بدون نیاز به داخل‌ریپو بودن داده‌ها)، به‌همراه یک فوتر «ما را جای دیگر هم دنبال کنید» که به همان محتوا در کانال‌های تلگرام/بله/روبیکا لینک می‌دهد. هر گیرنده این لینک‌ها را در همان قالبی که آن پلتفرم واقعاً پشتیبانی می‌کند رندر می‌کند — لینک واقعاً کلیک‌پذیر در روبیکا (از طریق تبدیل HTML به متادیتای لینک روبیکا)، و متن ساده به شکل `برچسب: آدرس` در ایتا (چون ایتا از لینک غنی پشتیبانی نمی‌کند). این‌ها را می‌توانید از طریق `CHANNEL_LINK_LABEL`، `TELEGRAM_CHANNEL_URL`، `BALE_CHANNEL_URL`، `RUBIKA_CHANNEL_URL` و `NATURE_QUOTES_URL` تنظیم کنید (جدول سیکرت‌ها را پایین‌تر ببینید) — هر کدام از `*_CHANNEL_URL` را خالی بگذارید تا آن پلتفرم از فوتر حذف شود.
 
-**Known limitation:** Telegram sends each photo of a multi-photo album as a separate update. This source currently treats every message as its own post, so an album becomes several separate posts on Rubika/Eitaa rather than one grouped album. Fine for single photo/video posts; grouping by `media_group_id` would be the natural next step if you post albums often.
+**محدودیت شناخته‌شده:** تلگرام هر عکس از یک آلبوم چندعکسی را به‌صورت یک آپدیت جداگانه می‌فرستد. این منبع فعلاً هر پیام را یک پست مستقل در نظر می‌گیرد، پس یک آلبوم چندعکسی به چند پست جدا در روبیکا/ایتا تبدیل می‌شود، نه یک آلبوم گروه‌بندی‌شده. برای پست‌های تک‌عکس/تک‌ویدیو مشکلی ندارد؛ اگر آلبوم زیاد پست می‌کنید، گروه‌بندی بر اساس `media_group_id` قدم بعدی طبیعی خواهد بود.
 
-## How it works
+## نحوهٔ کار
 
-Because free hosting doesn't give you a place to run a long-lived process, the bot doesn't run continuously. Instead, a **GitHub Actions workflow runs it on a schedule** (e.g. every 10 minutes). Each run:
+چون هاست رایگان جایی برای اجرای یک پردازش دائمی نمی‌دهد، ربات به‌طور پیوسته اجرا نمی‌شود. در عوض، یک **ورک‌فلوی گیت‌هاب اکشنز آن را طبق زمان‌بندی** (مثلاً هر ۱۰ دقیقه) اجرا می‌کند. هر اجرا:
 
-1. Polls for any pending admin DM commands (if `ADMIN_USER_IDS` is set) and updates search filters accordingly.
-2. Searches Divar for the configured cities/category, sorted by newest.
-3. Sends every new ad to each configured messenger.
-4. Optionally rechecks a batch of older ads to see if they look removed, and announces those.
-5. Commits the updated state (`tokens.json`, and `filters.json`/`admin_state.json` if used) back to the repo, so the next run picks up where this one left off.
+1. آیتم‌های جدید را از منبع پیکربندی‌شده می‌گیرد (آگهی‌های دیوار، یا پیام‌های تلگرام برای `telegram_relay`).
+2. هر آیتم جدید را به هر گیرنده‌ای که آن منبع اجازه می‌دهد ارسال می‌کند (به `Source.target_senders` نگاه کنید).
+3. وضعیت به‌روزشده (`tokens.json`) را به ریپازیتوری کامیت می‌کند تا اجرای بعدی از همان‌جا ادامه دهد.
 
-## Setup
+## راه‌اندازی
 
-### 1. Create your bot
+### ۱. ساخت ربات
 
-Open `@BotFather` in Telegram, create a bot, and note its token.
+`@BotFather` را در تلگرام باز کنید، یک ربات بسازید و توکن آن را یادداشت کنید.
 
-### 2. Get your chat/channel ID
+### ۲. گرفتن شناسهٔ چت/کانال
 
-- **Private chat:** message your bot, then visit `https://api.telegram.org/bot<TOKEN>/getUpdates` and read the `chat.id` field.
-- **Public channel:** you can just use its `@username` directly as the chat ID.
-- **Private channel/group:** add the bot as an **admin** with "Post Messages" permission, send a message in it, then check `getUpdates` the same way — the ID will be a large negative number.
+- **چت خصوصی:** به ربات پیام بدهید، سپس آدرس `https://api.telegram.org/bot<TOKEN>/getUpdates` را باز کنید و مقدار `chat.id` را بخوانید.
+- **کانال عمومی:** می‌توانید مستقیماً از `@username‎` آن به‌عنوان شناسهٔ چت استفاده کنید.
+- **کانال/گروه خصوصی:** ربات را به‌عنوان **ادمین** با دسترسی «ارسال پیام» اضافه کنید، یک پیام در آن بفرستید، سپس `getUpdates` را همان‌طور بررسی کنید — شناسه یک عدد منفی بزرگ خواهد بود.
 
-### 3. Find your city ID(s) and category slug
+### ۳. پیدا کردن شناسهٔ شهر(ها) و اسلاگ دسته‌بندی
 
-Go to [divar.ir](https://divar.ir), pick your city and category, and open the browser's Network tab (DevTools) while browsing search results. Look for the `city_ids` and `category` values in the request sent to `api.divar.ir/v8/postlist/w/search`. Alternatively, the URL shown when browsing `divar.ir/s/...` often reflects the category slug (e.g. `real-estate`, `villa`, `temporary-rent`).
+به [divar.ir](https://divar.ir) بروید، شهر و دسته‌بندی موردنظر را انتخاب کنید و در حین مرور نتایج جست‌وجو، تب Network مرورگر (DevTools) را باز کنید. مقادیر `city_ids` و `category` را در درخواست ارسالی به `api.divar.ir/v8/postlist/w/search` پیدا کنید. به‌طور جایگزین، آدرسی که هنگام مرور `divar.ir/s/...‎` نشان داده می‌شود اغلب همان اسلاگ دسته‌بندی را نشان می‌دهد (مثل `real-estate‎`, `villa‎`, `temporary-rent‎`).
 
-### 4. Fork this repo, then add repository secrets
+### ۴. فورک این ریپازیتوری، سپس افزودن سیکرت‌ها
 
-Go to **Settings → Secrets and variables → Actions** in your fork and add:
+در فورک خودتان به **Settings → Secrets and variables → Actions** بروید و موارد زیر را اضافه کنید:
 
-| Secret | Required | Example | Notes |
+| سیکرت | الزامی؟ | مثال | توضیح |
 |---|---|---|---|
-| `BOT_TOKEN` | optional | `123456:ABC-DEF...` | Telegram bot token from BotFather |
-| `BOT_CHATID` | optional | `-1001234567890` or `@mychannel` | Telegram destination chat/channel |
-| `BALE_BOT_TOKEN` | optional | | Bale bot token |
-| `BALE_CHATID` | optional | | Bale destination chat/channel |
-| `RUBIKA_BOT_TOKEN` | optional | | Rubika bot token |
-| `RUBIKA_CHATID` | optional | | Rubika destination chat/channel |
-| `EITAA_TOKEN` | optional | | EitaaYar API token |
-| `EITAA_CHATID` | optional | | Eitaa destination chat/channel |
-| `SOURCE_TYPE` | optional | `divar` | Which source to poll (see `sources/registry.py`); defaults to `divar` |
-| `TELEGRAM_RELAY_CHAT_IDS` | required for `telegram_relay` | `123456789,-1001234567890` | Comma-separated chat ids allowed to post through the relay (see [Telegram-relay source](#telegram-relay-source)) |
-| `CHANNEL_LINK_LABEL` | optional | `طبیعت+` | Clickable label used for every "follow us elsewhere" footer link |
-| `TELEGRAM_CHANNEL_URL` | optional | `https://t.me/nature_plus` | Footer link to your Telegram channel; empty to omit |
-| `BALE_CHANNEL_URL` | optional | `https://ble.ir/natureplus` | Footer link to your Bale channel; empty to omit |
-| `RUBIKA_CHANNEL_URL` | optional | `https://rubika.ir/natureplus1` | Footer link to your Rubika channel; empty to omit |
-| `NATURE_QUOTES_URL` | optional | jsDelivr URL to `tabiat.json` | Override to point at a different quotes dataset/theme |
-| `SEARCH_CITY_IDS` | ✅ | `823,1996,1999` | Comma-separated numeric city IDs (Divar source only) |
-| `SEARCH_CATEGORY` | ✅ | `real-estate` | Divar category slug |
-| `PROXY_URL` | optional | | Only needed if your runner can't reach Divar/Telegram directly |
-| `ADMIN_USER_IDS` | optional | `111111,222222` | Telegram numeric user IDs allowed to change filters via DM (see below) |
-| `STATUS_CHECK_LIMIT` | optional | `20` | Max old ads rechecked per run for the "likely removed" feature |
+| `BOT_TOKEN` | اختیاری | `123456:ABC-DEF...‎` | توکن ربات تلگرام از BotFather |
+| `BOT_CHATID` | اختیاری | `-1001234567890‎` یا `@mychannel‎` | چت/کانال مقصد در تلگرام |
+| `BALE_BOT_TOKEN` | اختیاری | | توکن ربات بله |
+| `BALE_CHATID` | اختیاری | | چت/کانال مقصد در بله |
+| `RUBIKA_BOT_TOKEN` | اختیاری | | توکن ربات روبیکا |
+| `RUBIKA_CHATID` | اختیاری | | چت/کانال مقصد در روبیکا |
+| `EITAA_TOKEN` | اختیاری | | توکن API ایتایار |
+| `EITAA_CHATID` | اختیاری | | چت/کانال مقصد در ایتا |
+| `SOURCE_TYPE` | اختیاری | `divar‎` | کدام منبع بررسی شود (به `sources/registry.py` نگاه کنید)؛ پیش‌فرض `divar‎` |
+| `TELEGRAM_RELAY_CHAT_IDS` | برای `telegram_relay‎` الزامی | `123456789,-1001234567890‎` | شناسه‌های چتی که اجازهٔ پست از طریق رله را دارند (به [منبع رله تلگرام](#منبع-رله-تلگرام-telegram_relay) نگاه کنید) |
+| `CHANNEL_LINK_LABEL` | اختیاری | `طبیعت+‎` | برچسب کلیک‌پذیر برای هر لینک فوتر «ما را جای دیگر هم دنبال کنید» |
+| `TELEGRAM_CHANNEL_URL` | اختیاری | `https://t.me/nature_plus‎` | لینک فوتر به کانال تلگرام شما؛ خالی بگذارید تا حذف شود |
+| `BALE_CHANNEL_URL` | اختیاری | `https://ble.ir/natureplus‎` | لینک فوتر به کانال بله شما؛ خالی بگذارید تا حذف شود |
+| `RUBIKA_CHANNEL_URL` | اختیاری | `https://rubika.ir/natureplus1‎` | لینک فوتر به کانال روبیکای شما؛ خالی بگذارید تا حذف شود |
+| `NATURE_QUOTES_URL` | اختیاری | آدرس jsDelivr برای `tabiat.json‎` | برای استفاده از یک دیتاست/موضوع نقل‌قول دیگر تغییرش دهید |
+| `SEARCH_CITY_IDS` | ✅ | `823,1996,1999‎` | شناسه‌های عددی شهر با کاما جدا (فقط منبع دیوار) |
+| `SEARCH_CATEGORY` | ✅ | `real-estate‎` | اسلاگ دسته‌بندی دیوار |
+| `PROXY_URL` | اختیاری | | فقط اگر ران‌ر شما نمی‌تواند مستقیم به دیوار/تلگرام دسترسی داشته باشد |
 
-Configure at least one token/chat-ID pair. Telegram keeps its rich photo or album
-delivery. Bale sends the first listing image followed by the formatted ad text; Rubika
-and Eitaa receive the formatted ad as text. The non-Telegram clients use compatible
-Bot API endpoints and can be pointed at alternative gateways with the optional
-`BALE_API_BASE_URL`, `RUBIKA_API_BASE_URL`, or `EITAA_API_BASE_URL` environment
-variables.
+حداقل یک جفت توکن/شناسهٔ چت را تنظیم کنید. تلگرام ارسال کامل عکس یا آلبوم را حفظ می‌کند؛ بله اولین عکس آگهی و سپس متن قالب‌بندی‌شده را می‌فرستد؛ روبیکا و ایتا آگهی قالب‌بندی‌شده را به‌صورت متن دریافت می‌کنند. کلاینت‌های غیر از تلگرام از اندپوینت‌های سازگار با Bot API استفاده می‌کنند و با متغیرهای محیطی اختیاری `BALE_API_BASE_URL`، `RUBIKA_API_BASE_URL` یا `EITAA_API_BASE_URL` می‌توان آن‌ها را به گیت‌وی‌های جایگزین وصل کرد.
 
-`tokens.json` now records delivery per platform. If one platform fails, the next run
-retries only that platform, avoiding duplicate posts on the platforms that succeeded.
+`tokens.json` اکنون تحویل هر پلتفرم را جداگانه ثبت می‌کند. اگر یک پلتفرم شکست بخورد، اجرای بعدی فقط همان پلتفرم را دوباره امتحان می‌کند و از پست تکراری در پلتفرم‌هایی که موفق بوده‌اند جلوگیری می‌شود.
 
-### 5. Enable Actions write permissions
+### ۵. فعال‌سازی دسترسی نوشتن اکشنز
 
-**Settings → Actions → General → Workflow permissions** → select **"Read and write permissions"** (needed so the workflow can commit `tokens.json` back to the repo).
+**Settings → Actions → General → Workflow permissions** ← گزینهٔ **«Read and write permissions»** را انتخاب کنید (لازم است تا ورک‌فلو بتواند `tokens.json` را به ریپازیتوری کامیت کند).
 
-### 6. Run it
+### ۶. اجرای آن
 
-Go to the **Actions** tab → select the workflow → **Run workflow**. On success it'll run automatically on the schedule defined in `.github/workflows/run-bot.yml`.
+به تب **Actions** بروید ← ورک‌فلو را انتخاب کنید ← **Run workflow**. پس از موفقیت، طبق زمان‌بندی تعریف‌شده در `.github/workflows/run-bots.yml‎` به‌طور خودکار اجرا می‌شود.
 
-## Admin filter commands
-
-If `ADMIN_USER_IDS` is set, authorized users can DM the bot (private chat, not the channel):
-
-```
-/set_cities 823,1996,1999
-/set_category real-estate
-/show_filters
-/help
-```
-
-Changes take effect starting the *next* scheduled run and only affect future searches — the bot never edits or deletes messages it already sent.
-
-## Local development
+## توسعهٔ محلی
 
 ```bash
-git clone https://github.com/<your-username>/hydra-sender.git
-cd hydra-sender
+git clone https://github.com/aliaslany/Multi_sender.git
+cd Multi_sender
 pip install -r requirements.txt
-export BOT_TOKEN=...
-export BOT_CHATID=...
-export SEARCH_CITY_IDS=823,1996
-export SEARCH_CATEGORY=real-estate
+cp .env.example .env
+# مقادیر .env را با توکن‌ها/شناسه‌های واقعی خودتان پر کنید
+export $(grep -v '^#' .env | xargs)
 echo '{}' > tokens.json
 python main.py
 ```
 
-## Known limitations
+یا با داکر:
 
-- This uses Divar's **unofficial** web API (the same one divar.ir itself calls), reverse-engineered from browser traffic. It can break again if Divar changes headers, endpoints, or response shapes.
-- The "likely sold/rented" detection is a **heuristic** (an ad becoming unreachable), not an explicit status field from Divar, since none is exposed on this endpoint. It can occasionally misfire; see `status_checker.py` for details and a debug flag to help refine it.
-- Hashtag detection is keyword/substring-based, so unusual phrasing in an ad's text may be missed.
+```bash
+docker compose up --build
+```
 
-## License
+## محدودیت‌های شناخته‌شده
 
-See the original upstream project — no separate license has been added in this fork.
+- این پروژه از API غیررسمی دیوار (همان چیزی که خودِ divar.ir صدا می‌زند) استفاده می‌کند که از ترافیک مرورگر مهندسی معکوس شده است. اگر دیوار هدرها، اندپوینت‌ها یا ساختار پاسخ را تغییر دهد، ممکن است دوباره بشکند.
+- تشخیص هشتگ بر اساس کلیدواژه/زیررشته است، پس عبارت‌های غیرمعمول در متن آگهی ممکن است دیده نشوند.
+- `telegram_relay‎` هر پیام تلگرام را یک پست مستقل در نظر می‌گیرد، پس یک آلبوم چندعکسی به چند پست جدا در پلتفرم‌های مقصد تبدیل می‌شود، نه یک آلبوم گروه‌بندی‌شده.
+
+## مجوز
+
+به پروژهٔ اصلی بالادستی نگاه کنید — در این فورک مجوز جداگانه‌ای اضافه نشده است.
