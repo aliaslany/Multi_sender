@@ -7,6 +7,10 @@ same polling model as every other source (fetch_new_ids/fetch_item, run on
 a cron via GitHub Actions) by calling Telegram's getUpdates and persisting
 an offset in state["source_state"]["telegram_relay"] between runs.
 
+Each relayed post gets a random Persian nature quote (from
+github.com/aliaslany/persian-quotes) and a "follow us elsewhere" links
+footer appended - see quotes.py and config.CHANNEL_LINK_LABEL/*_CHANNEL_URL.
+
 Known limitation: Telegram sends each photo of an album ("media group") as
 a separate update. This implementation treats every message as its own
 Item, so a multi-photo album currently becomes several separate posts on
@@ -17,10 +21,20 @@ by media_group_id would be the natural next step if that changes.
 import requests
 
 import config
-from core.models import Item, Media
+from core.models import ChannelLink, Item, Media
 from sources.base import Source
+from sources.telegram_relay.quotes import random_nature_quote
 
 _API_BASE = "https://api.telegram.org/bot{token}"
+
+
+def _channel_links() -> list[ChannelLink]:
+    pairs = [
+        (config.TELEGRAM_CHANNEL_URL, "telegram"),
+        (config.BALE_CHANNEL_URL, "bale"),
+        (config.RUBIKA_CHANNEL_URL, "rubika"),
+    ]
+    return [ChannelLink(label=config.CHANNEL_LINK_LABEL, url=url) for url, _name in pairs if url]
 
 
 class TelegramRelaySource(Source):
@@ -109,10 +123,15 @@ class TelegramRelaySource(Source):
 
         text = msg.get("caption") or msg.get("text") or ""
 
+        quote = random_nature_quote()
+        if quote:
+            text = "{}\n\n{}".format(text, quote) if text else quote
+
         return Item(
             id=item_id,
             raw_text=text,
             media=media,
+            channel_links=_channel_links(),
             source=self.name,
         )
 

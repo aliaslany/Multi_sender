@@ -27,6 +27,26 @@ TELEGRAM_RELAY_CHAT_IDS = [
     if c.strip()
 ]
 
+# A random quote from this theme file is appended to each relayed post.
+# Defaults to the "nature" (طبیعت) theme of github.com/aliaslany/persian-quotes.
+# jsDelivr is tried first (CDN), raw.githubusercontent.com as a fallback.
+NATURE_QUOTES_URL = os.environ.get(
+    "NATURE_QUOTES_URL",
+    "https://cdn.jsdelivr.net/gh/aliaslany/persian-quotes@main/data/quotes/tabiat.json",
+)
+NATURE_QUOTES_FALLBACK_URL = os.environ.get(
+    "NATURE_QUOTES_FALLBACK_URL",
+    "https://raw.githubusercontent.com/aliaslany/persian-quotes/main/data/quotes/tabiat.json",
+)
+
+# "Follow us elsewhere" footer links appended to relayed posts. Same label
+# across platforms by design (brand consistency); only the destination
+# differs. Set any of these empty to drop that platform from the footer.
+CHANNEL_LINK_LABEL = os.environ.get("CHANNEL_LINK_LABEL", "طبیعت+")
+TELEGRAM_CHANNEL_URL = os.environ.get("TELEGRAM_CHANNEL_URL", "https://t.me/nature_plus")
+BALE_CHANNEL_URL = os.environ.get("BALE_CHANNEL_URL", "https://ble.ir/natureplus")
+RUBIKA_CHANNEL_URL = os.environ.get("RUBIKA_CHANNEL_URL", "https://rubika.ir/natureplus1")
+
 BALE_API_BASE_URL = os.environ.get("BALE_API_BASE_URL", "https://tapi.bale.ai")
 RUBIKA_API_BASE_URL = os.environ.get(
     "RUBIKA_API_BASE_URL", "https://botapi.rubika.ir/v3"

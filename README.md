@@ -70,6 +70,8 @@ requirements.txt
 4. Set `TELEGRAM_RELAY_CHAT_IDS` to a comma-separated list of those ids (e.g. `123456789,-1001234567890`). **This is required** — without it the source processes nothing, so a stray DM from someone else can't get relayed to your channels.
 5. Set `SOURCE_TYPE=telegram_relay` as a repository secret.
 
+**Nature quote + channel-links footer:** every relayed post gets a random Persian nature-themed quote appended (fetched at run time from the `tabiat.json` theme file of [aliaslany/persian-quotes](https://github.com/aliaslany/persian-quotes), no bundling needed), plus a "follow us elsewhere" footer linking back to the same content's Telegram/Bale/Rubika channels. Each sender renders the footer links in whatever markup that platform actually supports — real clickable links on Rubika (via HTML→Rubika-metadata conversion), plain `label: url` text on Eitaa (no rich-link support there). Configure via `CHANNEL_LINK_LABEL`, `TELEGRAM_CHANNEL_URL`, `BALE_CHANNEL_URL`, `RUBIKA_CHANNEL_URL`, and `NATURE_QUOTES_URL` (see the secrets table below) — leave any `*_CHANNEL_URL` empty to drop that platform from the footer.
+
 **Known limitation:** Telegram sends each photo of a multi-photo album as a separate update. This source currently treats every message as its own post, so an album becomes several separate posts on Rubika/Eitaa rather than one grouped album. Fine for single photo/video posts; grouping by `media_group_id` would be the natural next step if you post albums often.
 
 ## How it works
@@ -114,6 +116,11 @@ Go to **Settings → Secrets and variables → Actions** in your fork and add:
 | `EITAA_CHATID` | optional | | Eitaa destination chat/channel |
 | `SOURCE_TYPE` | optional | `divar` | Which source to poll (see `sources/registry.py`); defaults to `divar` |
 | `TELEGRAM_RELAY_CHAT_IDS` | required for `telegram_relay` | `123456789,-1001234567890` | Comma-separated chat ids allowed to post through the relay (see [Telegram-relay source](#telegram-relay-source)) |
+| `CHANNEL_LINK_LABEL` | optional | `طبیعت+` | Clickable label used for every "follow us elsewhere" footer link |
+| `TELEGRAM_CHANNEL_URL` | optional | `https://t.me/nature_plus` | Footer link to your Telegram channel; empty to omit |
+| `BALE_CHANNEL_URL` | optional | `https://ble.ir/natureplus` | Footer link to your Bale channel; empty to omit |
+| `RUBIKA_CHANNEL_URL` | optional | `https://rubika.ir/natureplus1` | Footer link to your Rubika channel; empty to omit |
+| `NATURE_QUOTES_URL` | optional | jsDelivr URL to `tabiat.json` | Override to point at a different quotes dataset/theme |
 | `SEARCH_CITY_IDS` | ✅ | `823,1996,1999` | Comma-separated numeric city IDs (Divar source only) |
 | `SEARCH_CATEGORY` | ✅ | `real-estate` | Divar category slug |
 | `PROXY_URL` | optional | | Only needed if your runner can't reach Divar/Telegram directly |

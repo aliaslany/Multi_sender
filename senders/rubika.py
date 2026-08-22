@@ -21,8 +21,8 @@ class RubikaSender(Sender):
         return bool(config.RUBIKA_BOT_TOKEN and config.RUBIKA_CHATID)
 
     async def send(self, item: Item) -> bool:
-        bot = Robot(token=config.RUBIKA_BOT_TOKEN, raise_errors=False, parse_mode=None)
-        plain_text = build_message_text(item, escape=False)
+        bot = Robot(token=config.RUBIKA_BOT_TOKEN, raise_errors=False, parse_mode="HTML")
+        plain_text = build_message_text(item, escape=False, link_style="html")
         fits_as_caption = len(plain_text) <= DEFAULT_MESSAGE_LIMIT
         media = item.media[0] if item.media else None
 

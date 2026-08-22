@@ -36,6 +36,10 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           BOT_CHATID: ${{ secrets.BOT_CHATID }}
           TELEGRAM_RELAY_CHAT_IDS: ${{ secrets.TELEGRAM_RELAY_CHAT_IDS }}
+          CHANNEL_LINK_LABEL: ${{ secrets.CHANNEL_LINK_LABEL }}
+          TELEGRAM_CHANNEL_URL: ${{ secrets.TELEGRAM_CHANNEL_URL }}
+          BALE_CHANNEL_URL: ${{ secrets.BALE_CHANNEL_URL }}
+          RUBIKA_CHANNEL_URL: ${{ secrets.RUBIKA_CHANNEL_URL }}
           BALE_BOT_TOKEN: ${{ secrets.BALE_BOT_TOKEN }}
           BALE_CHATID: ${{ secrets.BALE_CHATID }}
           RUBIKA_BOT_TOKEN: ${{ secrets.RUBIKA_BOT_TOKEN }}

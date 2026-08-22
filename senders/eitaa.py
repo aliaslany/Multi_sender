@@ -23,7 +23,7 @@ class EitaaSender(Sender):
         return bool(config.EITAA_TOKEN and config.EITAA_CHATID)
 
     def _send_sync(self, item: Item) -> bool:
-        plain_text = build_message_text(item, escape=False)
+        plain_text = build_message_text(item, escape=False, link_style="plain")
         base_url = config.EITAA_API_BASE_URL.rstrip("/")
         send_message_url = "{}/{}/sendMessage".format(base_url, config.EITAA_TOKEN)
 

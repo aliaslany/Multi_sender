@@ -14,6 +14,15 @@ class Media(BaseModel):
     url: str
 
 
+class ChannelLink(BaseModel):
+    """One 'follow us elsewhere' link for a message footer. label is the
+    clickable text (the same brand label across platforms is normal - only
+    the url differs); senders render it as an HTML anchor, Markdown link,
+    or plain 'label: url' depending on what that platform actually supports."""
+    label: str
+    url: str
+
+
 class Item(BaseModel):
     id: str  # stable unique id (Divar calls this "token") used for dedup/state
     title: str = ""
@@ -31,3 +40,7 @@ class Item(BaseModel):
     # itself a finished piece of writing (e.g. relaying an existing Telegram
     # post) rather than structured listing data to be templated.
     raw_text: Optional[str] = None
+
+    # Optional "follow us elsewhere" footer links, rendered by each sender
+    # in whatever markup that platform supports (or a plain fallback).
+    channel_links: list[ChannelLink] = []
