@@ -1,10 +1,7 @@
-FROM python:3.10
+FROM python:3.12-slim
 
-COPY requirements.txt /app/
 WORKDIR /app
-RUN python -m pip install -U pip && pip install -r requirements.txt
-RUN echo '[]' > /app/tokens.json
-COPY main.py /app/
-# run crond as main process of container
-ENTRYPOINT [ "python3" ]
-CMD ["main.py"]
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["python", "main.py"]
