@@ -30,7 +30,7 @@ def _fetch_quotes() -> list[dict]:
                 _cache = quotes
                 return _cache
         except (requests.RequestException, ValueError) as error:
-            print("telegram_relay: could not fetch quotes from {}: {}".format(url, error))
+            print("sources.common.quotes: could not fetch quotes from {}: {}".format(url, error))
 
     _cache = []
     return _cache

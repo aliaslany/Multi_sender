@@ -33,7 +33,13 @@ sources/
     _raw_client.py           # low-level Divar API calls + parsing
     hashtags.py              # Divar-specific hashtag generation
   telegram_relay/          # Telegram itself as the source (see "Telegram-relay source" below)
-    client.py                # TelegramRelaySource - polls getUpdates, relays to Rubika/Eitaa only
+    client.py                # TelegramRelaySource - listens via getUpdates, relays to Rubika/Eitaa only
+    quotes.py                 # (moved) see sources/common/quotes.py
+  website/                 # a GitHub Pages form as the source (see "Website source" below)
+    client.py                # WebsiteSource - reads submissions/ committed by the Pages form
+  common/                  # helpers shared by relay-style sources (telegram_relay, website)
+    quotes.py                 # random Persian nature quote fetcher
+    channel_links.py          # "follow us elsewhere" footer link builder
 senders/
   base.py                  # Sender interface: enabled(), send(item)
   registry.py                # lists all built-in senders, filters to configured ones
@@ -75,6 +81,19 @@ requirements.txt
 **Nature quote + channel-links footer:** every relayed post gets a random Persian nature-themed quote appended (fetched at run time from the `tabiat.json` theme file of [aliaslany/persian-quotes](https://github.com/aliaslany/persian-quotes), no bundling needed), plus a "follow us elsewhere" footer linking back to the same content's Telegram/Bale/Rubika channels. Each sender renders the footer links in whatever markup that platform actually supports — real clickable links on Rubika (via HTML→Rubika-metadata conversion), plain `label: url` text on Eitaa (no rich-link support there). Configure via `CHANNEL_LINK_LABEL`, `TELEGRAM_CHANNEL_URL`, `BALE_CHANNEL_URL`, `RUBIKA_CHANNEL_URL`, and `NATURE_QUOTES_URL` (see the secrets table below) — leave any `*_CHANNEL_URL` empty to drop that platform from the footer.
 
 **Known limitation:** Telegram sends each photo of a multi-photo album as a separate update. This source currently treats every message as its own post, so an album becomes several separate posts on Rubika/Eitaa rather than one grouped album. Fine for single photo/video posts; grouping by `media_group_id` would be the natural next step if you post albums often.
+
+## Website source
+
+`SOURCE_TYPE=website` uses the GitHub Pages form under `docs/` as the source instead of Telegram. Open the page, write a caption, attach a photo or video, and submit — the form commits both files directly into this repo's `submissions/` folder using your own GitHub token (entered in the browser, never stored anywhere but there, optionally remembered in that browser's `localStorage` if you check the box). Since GitHub Actions always checks out the full repo before running, the next scheduled run just reads those files off disk like any other file on disk — no polling API needed on the bot's side.
+
+Unlike `telegram_relay`, this content doesn't exist anywhere yet, so `target_senders` is `None` — it's delivered to every sender you've configured (Telegram, Bale, Rubika, Eitaa). It gets the same nature-quote + channel-links footer treatment as `telegram_relay` (see above), since both share the same `sources/common/` helpers.
+
+**Setup:**
+1. Enable GitHub Pages: **Settings → Pages → Source** → "Deploy from a branch" → branch `main`, folder `/docs`. Wait a minute for the first deploy, then your form is live at `https://<username>.github.io/<repo>/`.
+2. Set `SOURCE_TYPE=website` as a repository secret.
+3. When you use the form, generate a fine-grained personal access token scoped to just this repo with **Contents: Read and write** permission (`https://github.com/settings/tokens?type=beta`) and paste it into the form's token field. It's used only for the two API calls that commit your submission — nothing is sent anywhere else.
+
+**Cleanup tradeoff worth knowing:** processed submission files are deleted right after being read, before delivery is confirmed to have succeeded on every platform. If a send fails partway through, the content is gone rather than retried automatically — acceptable here since, unlike a Divar listing, you can just resubmit through the form. The workflow's state-commit step pushes these deletions back to the repo alongside `tokens.json`.
 
 ## How it works
 
@@ -121,6 +140,7 @@ Go to **Settings → Secrets and variables → Actions** in your fork and add:
 | `BALE_CHANNEL_URL` | optional | `https://ble.ir/natureplus` | Footer link to your Bale channel; empty to omit |
 | `RUBIKA_CHANNEL_URL` | optional | `https://rubika.ir/natureplus1` | Footer link to your Rubika channel; empty to omit |
 | `NATURE_QUOTES_URL` | optional | jsDelivr URL to `tabiat.json` | Override to point at a different quotes dataset/theme |
+| `GITHUB_REPO` | auto-set in Actions | `aliaslany/Multi_sender` | Used by the `website` source to build raw file URLs; set manually only for local dev outside Actions |
 | `SEARCH_CITY_IDS` | ✅ | `823,1996,1999` | Comma-separated numeric city IDs (Divar source only) |
 | `SEARCH_CATEGORY` | ✅ | `real-estate` | Divar category slug |
 | `PROXY_URL` | optional | | Only needed if your runner can't reach Divar/Telegram directly |
@@ -162,6 +182,7 @@ python main.py
 - This uses Divar's **unofficial** web API (the same one divar.ir itself calls), reverse-engineered from browser traffic. It can break again if Divar changes headers, endpoints, or response shapes.
 - Hashtag detection is keyword/substring-based, so unusual phrasing in an ad's text may be missed.
 - `telegram_relay` treats every Telegram message as its own post, so a multi-photo album becomes several separate posts on the destination platforms rather than one grouped album.
+- `website` deletes a submission's files as soon as they're read, before delivery is confirmed on every platform — a failed send loses the content rather than retrying it automatically.
 
 ## License
 

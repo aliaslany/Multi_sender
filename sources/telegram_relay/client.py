@@ -21,20 +21,12 @@ by media_group_id would be the natural next step if that changes.
 import requests
 
 import config
-from core.models import ChannelLink, Item, Media
+from core.models import Item, Media
 from sources.base import Source
-from sources.telegram_relay.quotes import random_nature_quote
+from sources.common.channel_links import cross_promotion_links
+from sources.common.quotes import random_nature_quote
 
 _API_BASE = "https://api.telegram.org/bot{token}"
-
-
-def _channel_links() -> list[ChannelLink]:
-    pairs = [
-        (config.TELEGRAM_CHANNEL_URL, "telegram"),
-        (config.BALE_CHANNEL_URL, "bale"),
-        (config.RUBIKA_CHANNEL_URL, "rubika"),
-    ]
-    return [ChannelLink(label=config.CHANNEL_LINK_LABEL, url=url) for url, _name in pairs if url]
 
 
 class TelegramRelaySource(Source):
@@ -131,7 +123,7 @@ class TelegramRelaySource(Source):
             id=item_id,
             raw_text=text,
             media=media,
-            channel_links=_channel_links(),
+            channel_links=cross_promotion_links(),
             source=self.name,
         )
 

@@ -46,6 +46,7 @@ jobs:
           RUBIKA_CHATID: ${{ secrets.RUBIKA_CHATID }}
           EITAA_TOKEN: ${{ secrets.EITAA_TOKEN }}
           EITAA_CHATID: ${{ secrets.EITAA_CHATID }}
+          GITHUB_REPO: ${{ github.repository }}
           PROXY_URL: ${{ secrets.PROXY_URL }}
           DEBUG_DUMP_SECTIONS: ${{ secrets.DEBUG_DUMP_SECTIONS }}
           SLEEP_SEC: ${{ secrets.SLEEP_SEC }}
@@ -57,6 +58,7 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add -f tokens.json
-          git diff --staged --quiet || git commit -m "Update seen ads state"
+          git add -A -- submissions/
+          git diff --staged --quiet || git commit -m "Update seen ads state / processed submissions"
           git pull --rebase origin "${{ github.ref_name }}"
           git push

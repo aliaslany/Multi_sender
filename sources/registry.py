@@ -7,10 +7,12 @@ then add it to AVAILABLE_SOURCES below. Select it with SOURCE_TYPE=<name>.
 from sources.base import Source
 from sources.divar.client import SOURCE as DIVAR_SOURCE
 from sources.telegram_relay.client import SOURCE as TELEGRAM_RELAY_SOURCE
+from sources.website.client import SOURCE as WEBSITE_SOURCE
 
 AVAILABLE_SOURCES: dict[str, Source] = {
     "divar": DIVAR_SOURCE,
     "telegram_relay": TELEGRAM_RELAY_SOURCE,
+    "website": WEBSITE_SOURCE,
 }
 
 

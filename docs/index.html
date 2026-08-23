@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>طبیعت+ | ارسال پست</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css');
+
+  :root {
+    --bg-0: #101a14;
+    --bg-1: #16241a;
+    --card: #1b2b1f;
+    --line: #2b3d2f;
+    --text: #eee7d8;
+    --text-dim: #9fb09f;
+    --amber: #c9a227;
+    --amber-soft: #e0c15c;
+    --sage: #7fa17f;
+    --error: #d97757;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg-0);
+    font-family: 'Vazirmatn', sans-serif;
+    color: var(--text);
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Sunset glow behind everything - the recurring motif of @nature_plus */
+  body::before {
+    content: "";
+    position: fixed;
+    top: -20%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    max-width: 640px;
+    max-height: 640px;
+    background: radial-gradient(circle, rgba(201,162,39,0.22) 0%, rgba(201,162,39,0.08) 45%, transparent 70%);
+    filter: blur(10px);
+    pointer-events: none;
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(-24px, 32px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
+  }
+
+  .wrap { width: 100%; max-width: 480px; position: relative; z-index: 1; }
+
+  .eyebrow {
+    color: var(--amber-soft);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--amber-soft);
+    box-shadow: 0 0 8px var(--amber-soft);
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    background: linear-gradient(90deg, var(--amber-soft), var(--sage));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .sub {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 28px;
+    line-height: 1.9;
+  }
+
+  form {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  label {
+    font-size: 13px;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  textarea, input[type="text"], input[type="password"] {
+    width: 100%;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    padding: 12px 14px;
+    resize: vertical;
+    transition: border-color 0.15s ease;
+  }
+
+  textarea:focus, input:focus, .file-drop:focus-within {
+    outline: none;
+    border-color: var(--amber);
+  }
+
+  textarea { min-height: 96px; line-height: 1.8; }
+
+  .file-drop {
+    border: 1.5px dashed var(--line);
+    border-radius: 10px;
+    background: var(--bg-1);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    position: relative;
+  }
+
+  .file-drop.has-file { border-style: solid; border-color: var(--sage); }
+  .file-drop input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+
+  .file-drop .hint { color: var(--text-dim); font-size: 13px; }
+  .file-drop .filename { color: var(--amber-soft); font-size: 14px; margin-top: 4px; word-break: break-all; }
+
+  .preview {
+    margin-top: 12px;
+    max-width: 100%;
+    max-height: 220px;
+    border-radius: 8px;
+    display: none;
+  }
+  .preview.visible { display: block; }
+
+  details {
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  summary {
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+  }
+  details[open] summary { margin-bottom: 12px; }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .remember-row input { accent-color: var(--amber); }
+
+  button {
+    background: linear-gradient(90deg, var(--amber), var(--amber-soft));
+    color: #1b1400;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  button:hover:not(:disabled) { filter: brightness(1.08); }
+  button:active:not(:disabled) { transform: scale(0.99); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  button:focus-visible { outline: 2px solid var(--amber-soft); outline-offset: 2px; }
+
+  .status {
+    font-size: 13.5px;
+    line-height: 1.8;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: none;
+  }
+  .status.visible { display: block; }
+  .status.info    { background: rgba(127,161,127,0.12); color: var(--sage); border: 1px solid rgba(127,161,127,0.3); }
+  .status.error   { background: rgba(217,119,87,0.12); color: var(--error); border: 1px solid rgba(217,119,87,0.3); }
+  .status.success { background: rgba(201,162,39,0.14); color: var(--amber-soft); border: 1px solid rgba(201,162,39,0.35); }
+
+  footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-dim);
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow"><span class="dot"></span> طبیعت+</div>
+  <h1>ارسال پست جدید</h1>
+  <p class="sub">یک عکس یا ویدیو با متن دلخواه بفرستید — به‌طور خودکار در اجرای بعدی ربات (حداکثر تا ۱۰ دقیقه دیگر) به تلگرام، بله، روبیکا و ایتا ارسال می‌شود.</p>
+
+  <form id="postForm">
+    <div>
+      <label for="caption">متن پست</label>
+      <textarea id="caption" placeholder="غروبِ یکی از روزای خیلی گرم تابستون…" required></textarea>
+    </div>
+
+    <div>
+      <label>عکس یا ویدیو</label>
+      <div class="file-drop" id="fileDrop">
+        <input type="file" id="mediaFile" accept="image/*,video/*" required>
+        <div class="hint" id="fileHint">برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید</div>
+        <div class="filename" id="fileName"></div>
+      </div>
+      <img id="preview" class="preview" alt="پیش‌نمایش">
+    </div>
+
+    <details id="tokenDetails">
+      <summary>تنظیمات اتصال (GitHub Token)</summary>
+      <label for="ghToken">GitHub Personal Access Token</label>
+      <input type="password" id="ghToken" placeholder="ghp_... یا github_pat_..." autocomplete="off" required>
+      <div class="remember-row">
+        <input type="checkbox" id="rememberToken">
+        <label for="rememberToken" style="margin:0;">در همین مرورگر به‌خاطر بسپار (localStorage)</label>
+      </div>
+    </details>
+
+    <div id="status" class="status"></div>
+
+    <button type="submit" id="submitBtn">ارسال پست</button>
+  </form>
+
+  <footer>محتوا مستقیماً به مخزن aliaslany/Multi_sender کامیت می‌شود · هیچ سروری در میان نیست</footer>
+</div>
+
+<script>
+const GITHUB_REPO = "aliaslany/Multi_sender";
+const API_BASE = `https://api.github.com/repos/${GITHUB_REPO}/contents`;
+
+const form = document.getElementById('postForm');
+const captionEl = document.getElementById('caption');
+const fileInput = document.getElementById('mediaFile');
+const fileDrop = document.getElementById('fileDrop');
+const fileHint = document.getElementById('fileHint');
+const fileNameEl = document.getElementById('fileName');
+const preview = document.getElementById('preview');
+const tokenInput = document.getElementById('ghToken');
+const rememberBox = document.getElementById('rememberToken');
+const statusEl = document.getElementById('status');
+const submitBtn = document.getElementById('submitBtn');
+const tokenDetails = document.getElementById('tokenDetails');
+
+// Restore a remembered token, if the user opted in previously.
+const savedToken = localStorage.getItem('np_gh_token');
+if (savedToken) {
+  tokenInput.value = savedToken;
+  rememberBox.checked = true;
+} else {
+  tokenDetails.open = true;
+}
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  fileDrop.classList.add('has-file');
+  fileHint.textContent = 'فایل انتخاب‌شده:';
+  fileNameEl.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} مگابایت)`;
+
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.classList.add('visible');
+    };
+    reader.readAsDataURL(file);
+  } else {
+    preview.classList.remove('visible');
+  }
+});
+
+function showStatus(kind, message) {
+  statusEl.className = `status visible ${kind}`;
+  statusEl.textContent = message;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function slugTimestamp() {
+  const d = new Date();
+  return d.toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+}
+
+async function putFile(path, base64Content, message, token) {
+  const response = await fetch(`${API_BASE}/${path}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+    },
+    body: JSON.stringify({ message, content: base64Content }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const caption = captionEl.value.trim();
+  const file = fileInput.files[0];
+  const token = tokenInput.value.trim();
+
+  if (!file) { showStatus('error', 'یک عکس یا ویدیو انتخاب کنید.'); return; }
+  if (!token) { showStatus('error', 'برای ارسال، توکن گیت‌هاب لازم است.'); return; }
+
+  if (rememberBox.checked) {
+    localStorage.setItem('np_gh_token', token);
+  } else {
+    localStorage.removeItem('np_gh_token');
+  }
+
+  submitBtn.disabled = true;
+  showStatus('info', 'در حال آپلود فایل رسانه…');
+
+  try {
+    const id = slugTimestamp();
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const mediaFilename = `${id}.${ext}`;
+    const mediaType = file.type.startsWith('video/') ? 'video' : 'photo';
+
+    const base64Media = await fileToBase64(file);
+    await putFile(
+      `submissions/media/${mediaFilename}`,
+      base64Media,
+      `Add submission media ${mediaFilename}`,
+      token
+    );
+
+    showStatus('info', 'در حال ثبت پست…');
+
+    const descriptor = { caption, media_filename: mediaFilename, media_type: mediaType };
+    const base64Descriptor = btoa(unescape(encodeURIComponent(JSON.stringify(descriptor, null, 2))));
+    await putFile(
+      `submissions/${id}.json`,
+      base64Descriptor,
+      `Add submission ${id}`,
+      token
+    );
+
+    showStatus('success', 'پست ثبت شد! تا ۱۰ دقیقهٔ دیگر در اجرای بعدی ربات ارسال می‌شود.');
+    form.reset();
+    fileDrop.classList.remove('has-file');
+    fileHint.textContent = 'برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید';
+    fileNameEl.textContent = '';
+    preview.classList.remove('visible');
+    if (rememberBox.checked) tokenInput.value = token; // reset() clears it - restore if remembered
+  } catch (err) {
+    showStatus('error', `خطا در ارسال: ${err.message}`);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

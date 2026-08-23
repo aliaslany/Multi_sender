@@ -39,6 +39,10 @@ NATURE_QUOTES_FALLBACK_URL = os.environ.get(
     "https://raw.githubusercontent.com/aliaslany/persian-quotes/main/data/quotes/tabiat.json",
 )
 
+# Used by the website source to build raw.githubusercontent.com URLs for
+# media files committed by the GitHub Pages submission form.
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "aliaslany/Multi_sender")
+
 # "Follow us elsewhere" footer links appended to relayed posts. Same label
 # across platforms by design (brand consistency); only the destination
 # differs. Set any of these empty to drop that platform from the footer.
