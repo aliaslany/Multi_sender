@@ -229,32 +229,40 @@
 <div class="wrap">
   <div class="eyebrow"><span class="dot"></span> طبیعت+</div>
   <h1>ارسال پست جدید</h1>
-  <p class="sub">یک عکس یا ویدیو با متن دلخواه بفرستید — به‌طور خودکار در اجرای بعدی ربات (حداکثر تا ۱۰ دقیقه دیگر) به تلگرام، بله، روبیکا و ایتا ارسال می‌شود.</p>
+  <p class="sub">یک عکس یا ویدیو با متن دلخواه بفرستید — به‌طور خودکار در اجرای بعدی ربات (حداکثر تا ۱۰ دقیقه دیگر) به مقصدهایی که مشخص می‌کنید ارسال می‌شود.</p>
 
   <form id="postForm">
     <div>
       <label for="caption">متن پست</label>
-      <textarea id="caption" placeholder="غروبِ یکی از روزای خیلی گرم تابستون…" required></textarea>
+      <textarea id="caption" placeholder="غروبِ یکی از روزای خیلی گرم تابستون…"></textarea>
     </div>
 
     <div>
-      <label>عکس یا ویدیو</label>
+      <label>عکس یا ویدیو (اختیاری)</label>
       <div class="file-drop" id="fileDrop">
-        <input type="file" id="mediaFile" accept="image/*,video/*" required>
+        <input type="file" id="mediaFile" accept="image/*,video/*">
         <div class="hint" id="fileHint">برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید</div>
         <div class="filename" id="fileName"></div>
       </div>
       <img id="preview" class="preview" alt="پیش‌نمایش">
     </div>
 
-    <details id="tokenDetails">
-      <summary>تنظیمات اتصال (GitHub Token)</summary>
-      <label for="ghToken">GitHub Personal Access Token</label>
-      <input type="password" id="ghToken" placeholder="ghp_... یا github_pat_..." autocomplete="off" required>
-      <div class="remember-row">
-        <input type="checkbox" id="rememberToken">
-        <label for="rememberToken" style="margin:0;">در همین مرورگر به‌خاطر بسپار (localStorage)</label>
-      </div>
+    <div>
+      <label for="promoCode">کد تبلیغی</label>
+      <input type="text" id="promoCode" placeholder="کد آزمایشی خود را وارد کنید" required>
+      <div class="hint" id="promoHint" style="margin-top:6px;"></div>
+    </div>
+
+    <details id="destinationsDetails" open>
+      <summary>مقصدهای ارسال (حداقل یکی را پر کنید)</summary>
+      <label for="telegramChatId">شناسه چت/کانال تلگرام</label>
+      <input type="text" id="telegramChatId" placeholder="@your_channel یا -1001234567890">
+      <label for="baleChatId" style="margin-top:12px;">شناسه چت/کانال بله</label>
+      <input type="text" id="baleChatId" placeholder="@your_channel">
+      <label for="rubikaChatId" style="margin-top:12px;">شناسه چت/کانال روبیکا</label>
+      <input type="text" id="rubikaChatId" placeholder="@your_channel">
+      <label for="eitaaChatId" style="margin-top:12px;">شناسه چت/کانال ایتا</label>
+      <input type="text" id="eitaaChatId" placeholder="@your_channel">
     </details>
 
     <div id="status" class="status"></div>
@@ -262,12 +270,12 @@
     <button type="submit" id="submitBtn">ارسال پست</button>
   </form>
 
-  <footer>محتوا مستقیماً به مخزن aliaslany/Multi_sender کامیت می‌شود · هیچ سروری در میان نیست</footer>
+  <footer>کد تبلیغی و مقصدها را ربات دریافت می‌کند، نه توکن یا اطلاعات حساس شما · هیچ توکن گیت‌هابی لازم نیست</footer>
 </div>
 
 <script>
-const GITHUB_REPO = "aliaslany/Multi_sender";
-const API_BASE = `https://api.github.com/repos/${GITHUB_REPO}/contents`;
+// Set this to your deployed Worker's URL once (see worker/ in this repo).
+const API_BASE = "https://multi-sender-submissions.YOUR_SUBDOMAIN.workers.dev";
 
 const form = document.getElementById('postForm');
 const captionEl = document.getElementById('caption');
@@ -276,20 +284,11 @@ const fileDrop = document.getElementById('fileDrop');
 const fileHint = document.getElementById('fileHint');
 const fileNameEl = document.getElementById('fileName');
 const preview = document.getElementById('preview');
-const tokenInput = document.getElementById('ghToken');
-const rememberBox = document.getElementById('rememberToken');
+const promoInput = document.getElementById('promoCode');
+const promoHint = document.getElementById('promoHint');
 const statusEl = document.getElementById('status');
 const submitBtn = document.getElementById('submitBtn');
-const tokenDetails = document.getElementById('tokenDetails');
-
-// Restore a remembered token, if the user opted in previously.
-const savedToken = localStorage.getItem('np_gh_token');
-if (savedToken) {
-  tokenInput.value = savedToken;
-  rememberBox.checked = true;
-} else {
-  tokenDetails.open = true;
-}
+const destinationIds = ['telegramChatId', 'baleChatId', 'rubikaChatId', 'eitaaChatId'];
 
 fileInput.addEventListener('change', () => {
   const file = fileInput.files[0];
@@ -315,87 +314,72 @@ function showStatus(kind, message) {
   statusEl.textContent = message;
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function slugTimestamp() {
-  const d = new Date();
-  return d.toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
-}
-
-async function putFile(path, base64Content, message, token) {
-  const response = await fetch(`${API_BASE}/${path}`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github+json',
-    },
-    body: JSON.stringify({ message, content: base64Content }),
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.message || `HTTP ${response.status}`);
-  }
-  return response.json();
-}
+let promoCheckTimer = null;
+promoInput.addEventListener('input', () => {
+  clearTimeout(promoCheckTimer);
+  const code = promoInput.value.trim();
+  if (!code) { promoHint.textContent = ''; return; }
+  promoCheckTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/promo/${encodeURIComponent(code)}/status`);
+      const data = await res.json();
+      if (!data.valid) {
+        promoHint.textContent = data.reason === 'expired'
+          ? 'دورهٔ آزمایشی این کد به پایان رسیده است.'
+          : 'این کد تبلیغی معتبر نیست.';
+        promoHint.style.color = 'var(--error)';
+      } else {
+        promoHint.textContent = data.started
+          ? `${data.days_left} روز از دورهٔ آزمایشی شما باقی مانده است.`
+          : `این کد ${data.days_left} روز اعتبار آزمایشی دارد و با اولین ارسال شروع می‌شود.`;
+        promoHint.style.color = 'var(--sage)';
+      }
+    } catch {
+      promoHint.textContent = '';
+    }
+  }, 400);
+});
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const caption = captionEl.value.trim();
   const file = fileInput.files[0];
-  const token = tokenInput.value.trim();
-
-  if (!file) { showStatus('error', 'یک عکس یا ویدیو انتخاب کنید.'); return; }
-  if (!token) { showStatus('error', 'برای ارسال، توکن گیت‌هاب لازم است.'); return; }
-
-  if (rememberBox.checked) {
-    localStorage.setItem('np_gh_token', token);
-  } else {
-    localStorage.removeItem('np_gh_token');
+  const promoCode = promoInput.value.trim();
+  const destinations = {};
+  for (const id of destinationIds) {
+    destinations[id] = document.getElementById(id).value.trim();
   }
+  const hasDestination = Object.values(destinations).some(v => v);
+
+  if (!promoCode) { showStatus('error', 'کد تبلیغی را وارد کنید.'); return; }
+  if (!caption && !file) { showStatus('error', 'متن یا فایل رسانه لازم است.'); return; }
+  if (!hasDestination) { showStatus('error', 'حداقل یک مقصد را وارد کنید.'); return; }
 
   submitBtn.disabled = true;
-  showStatus('info', 'در حال آپلود فایل رسانه…');
+  showStatus('info', 'در حال ارسال…');
 
   try {
-    const id = slugTimestamp();
-    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
-    const mediaFilename = `${id}.${ext}`;
-    const mediaType = file.type.startsWith('video/') ? 'video' : 'photo';
+    const formData = new FormData();
+    formData.set('caption', caption);
+    formData.set('promo_code', promoCode);
+    formData.set('telegram_chat_id', destinations.telegramChatId);
+    formData.set('bale_chat_id', destinations.baleChatId);
+    formData.set('rubika_chat_id', destinations.rubikaChatId);
+    formData.set('eitaa_chat_id', destinations.eitaaChatId);
+    if (file) formData.set('media', file);
 
-    const base64Media = await fileToBase64(file);
-    await putFile(
-      `submissions/media/${mediaFilename}`,
-      base64Media,
-      `Add submission media ${mediaFilename}`,
-      token
-    );
+    const response = await fetch(`${API_BASE}/submit`, { method: 'POST', body: formData });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
 
-    showStatus('info', 'در حال ثبت پست…');
-
-    const descriptor = { caption, media_filename: mediaFilename, media_type: mediaType };
-    const base64Descriptor = btoa(unescape(encodeURIComponent(JSON.stringify(descriptor, null, 2))));
-    await putFile(
-      `submissions/${id}.json`,
-      base64Descriptor,
-      `Add submission ${id}`,
-      token
-    );
-
-    showStatus('success', 'پست ثبت شد! تا ۱۰ دقیقهٔ دیگر در اجرای بعدی ربات ارسال می‌شود.');
+    showStatus('success', result.message || 'پست ثبت شد.');
     form.reset();
     fileDrop.classList.remove('has-file');
     fileHint.textContent = 'برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید';
     fileNameEl.textContent = '';
     preview.classList.remove('visible');
-    if (rememberBox.checked) tokenInput.value = token; // reset() clears it - restore if remembered
+    promoHint.textContent = '';
   } catch (err) {
     showStatus('error', `خطا در ارسال: ${err.message}`);
   } finally {

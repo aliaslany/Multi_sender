@@ -43,3 +43,13 @@ class Source(ABC):
         fetched/parsed (source implementations should log why and return
         None rather than raising, so one bad item doesn't kill the run)."""
         raise NotImplementedError
+
+    def on_delivered(self, item_id: str, fully_delivered: bool) -> None:
+        """Optional hook called once per item, after delivery is attempted.
+        fully_delivered is True only once every sender this source targets
+        has this item marked delivered in state - a partial failure leaves
+        it False, since fetch_item will be called again for this id on a
+        future run to retry the senders that failed. Sources that own their
+        own backing data (like website's Worker-hosted submissions) can use
+        this to clean up once it's safe to do so. No-op by default."""
+        pass

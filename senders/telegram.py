@@ -25,12 +25,13 @@ class TelegramSender(Sender):
     def enabled(self) -> bool:
         return bool(config.BOT_TOKEN and config.BOT_CHATID)
 
-    async def _send_text_chunks(self, text: str):
+    async def _send_text_chunks(self, text: str, chat_id: str):
         for chunk in split_text_into_chunks(text, TELEGRAM_MESSAGE_LIMIT):
-            await _bot.send_message(text=chunk, chat_id=config.BOT_CHATID, parse_mode="HTML")
+            await _bot.send_message(text=chunk, chat_id=chat_id, parse_mode="HTML")
 
     async def send(self, item: Item) -> bool:
-        if _bot is None or not config.BOT_CHATID:
+        chat_id = item.destination_overrides.get(self.name, config.BOT_CHATID)
+        if _bot is None or not chat_id:
             print("Telegram is not configured.")
             return False
 
@@ -46,7 +47,7 @@ class TelegramSender(Sender):
                     await _bot.send_photo(
                         caption=caption,
                         photo=photos[0],
-                        chat_id=config.BOT_CHATID,
+                        chat_id=chat_id,
                         parse_mode="HTML",
                     )
                 else:
@@ -55,7 +56,7 @@ class TelegramSender(Sender):
                         await _bot.send_media_group(
                             caption=caption,
                             media=media_list,
-                            chat_id=config.BOT_CHATID,
+                            chat_id=chat_id,
                             parse_mode="HTML",
                         )
                     except telegram.error.BadRequest as e:
@@ -63,9 +64,9 @@ class TelegramSender(Sender):
                         fits_as_caption = False
 
                 if not fits_as_caption:
-                    await self._send_text_chunks(text)
+                    await self._send_text_chunks(text, chat_id)
             else:
-                await self._send_text_chunks(text)
+                await self._send_text_chunks(text, chat_id)
             print("Sent item to Telegram.")
             return True
         except Exception as error:

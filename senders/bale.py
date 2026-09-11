@@ -16,6 +16,11 @@ class BaleSender(Sender):
         return bool(config.BALE_BOT_TOKEN and config.BALE_CHATID)
 
     def _send_sync(self, item: Item) -> bool:
+        chat_id = item.destination_overrides.get(self.name, config.BALE_CHATID)
+        if not chat_id:
+            print("Bale: no destination chat id.")
+            return False
+
         html_text = build_message_text(item, escape=True)
         base_url = config.BALE_API_BASE_URL.rstrip("/")
         send_message_url = "{}/bot{}/sendMessage".format(base_url, config.BALE_BOT_TOKEN)
@@ -30,7 +35,7 @@ class BaleSender(Sender):
                 "Bale photo",
                 send_photo_url,
                 {
-                    "chat_id": config.BALE_CHATID,
+                    "chat_id": chat_id,
                     "photo": photos[0],
                     "caption": caption,
                     "parse_mode": "HTML",
@@ -42,7 +47,7 @@ class BaleSender(Sender):
                 print("Sent item to Bale.")
                 return True
 
-        return send_http_message("Bale", send_message_url, config.BALE_CHATID, html_text, TELEGRAM_MESSAGE_LIMIT)
+        return send_http_message("Bale", send_message_url, chat_id, html_text, TELEGRAM_MESSAGE_LIMIT)
 
     async def send(self, item: Item) -> bool:
         try:

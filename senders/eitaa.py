@@ -23,6 +23,11 @@ class EitaaSender(Sender):
         return bool(config.EITAA_TOKEN and config.EITAA_CHATID)
 
     def _send_sync(self, item: Item) -> bool:
+        chat_id = item.destination_overrides.get(self.name, config.EITAA_CHATID)
+        if not chat_id:
+            print("Eitaa: no destination chat id.")
+            return False
+
         plain_text = build_message_text(item, escape=False, link_style="plain")
         base_url = config.EITAA_API_BASE_URL.rstrip("/")
         send_message_url = "{}/{}/sendMessage".format(base_url, config.EITAA_TOKEN)
@@ -38,7 +43,7 @@ class EitaaSender(Sender):
             try:
                 response = requests.post(
                     send_file_url,
-                    data={"chat_id": config.EITAA_CHATID, "caption": caption},
+                    data={"chat_id": chat_id, "caption": caption},
                     files={"file": (file_name, file_bytes)},
                     timeout=config.MESSENGER_REQUEST_TIMEOUT,
                 )
@@ -52,10 +57,10 @@ class EitaaSender(Sender):
                 if fits_as_caption:
                     print("Sent item to Eitaa.")
                     return True
-                return send_http_message("Eitaa", send_message_url, config.EITAA_CHATID, plain_text)
+                return send_http_message("Eitaa", send_message_url, chat_id, plain_text)
             print("Eitaa: falling back to text-only ({} send failed).".format(media.type))
 
-        return send_http_message("Eitaa", send_message_url, config.EITAA_CHATID, plain_text)
+        return send_http_message("Eitaa", send_message_url, chat_id, plain_text)
 
     async def send(self, item: Item) -> bool:
         try:

@@ -1,0 +1,16 @@
+name = "multi-sender-submissions"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+
+kv_namespaces = [
+  { binding = "MULTI_SENDER_KV", id = "16c352d68e2b4bca9f9a24151811e31b" }
+]
+
+# Set with:
+#   wrangler secret put API_TOKEN
+#   wrangler secret put ADMIN_TOKEN
+#
+# Set ALLOWED_ORIGIN as a plain var (not secret) to your Pages origin,
+# e.g. "https://aliaslany.github.io" - or leave unset to allow any origin.
+[vars]
+ALLOWED_ORIGIN = "https://aliaslany.github.io"

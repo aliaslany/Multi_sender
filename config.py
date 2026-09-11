@@ -43,6 +43,11 @@ NATURE_QUOTES_FALLBACK_URL = os.environ.get(
 # media files committed by the GitHub Pages submission form.
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "aliaslany/Multi_sender")
 
+# The submission API (Cloudflare Worker) backing the website source. See
+# worker/ in this repo for its source and deploy instructions.
+WEBSITE_API_URL = os.environ.get("WEBSITE_API_URL", "")
+WEBSITE_API_TOKEN = os.environ.get("WEBSITE_API_TOKEN", "")
+
 # "Follow us elsewhere" footer links appended to relayed posts. Same label
 # across platforms by design (brand consistency); only the destination
 # differs. Set any of these empty to drop that platform from the footer.

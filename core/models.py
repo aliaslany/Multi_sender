@@ -44,3 +44,11 @@ class Item(BaseModel):
     # Optional "follow us elsewhere" footer links, rendered by each sender
     # in whatever markup that platform supports (or a plain fallback).
     channel_links: list[ChannelLink] = []
+
+    # Optional per-item destination overrides, keyed by sender name (e.g.
+    # {"telegram": "@customer_channel"}). A sender uses this chat id instead
+    # of its own static config default when present. If non-empty, delivery
+    # is restricted to exactly these sender names - this is how "website"
+    # sends a customer's post only to the platforms they filled in, instead
+    # of falling back to your own default channels for the ones they didn't.
+    destination_overrides: dict[str, str] = {}

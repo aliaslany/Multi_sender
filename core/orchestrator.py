@@ -1,7 +1,8 @@
 """Fetch new items from the configured source and deliver each to every
-configured sender allowed for that source. Knows nothing about Divar,
-Telegram, Bale, etc. specifically - it only talks to the Source and Sender
-interfaces.
+configured sender allowed for that source (or, for an item with its own
+destination_overrides, just the senders it names). Knows nothing about
+Divar, Telegram, Bale, etc. specifically - it only talks to the Source and
+Sender interfaces.
 """
 import asyncio
 import datetime
@@ -25,6 +26,17 @@ async def _deliver(item, senders: list[Sender], destinations: list[str]) -> dict
     return outcomes
 
 
+def _target_names_for_item(item, sender_names: list[str]) -> list[str]:
+    """Which sender names this specific item should go to. Normally that's
+    just the source-wide sender_names, but an item carrying its own
+    destination_overrides (e.g. a website submission naming only the
+    platforms the customer filled in) narrows it to just those - and only
+    the ones actually configured/enabled this run."""
+    if not item.destination_overrides:
+        return sender_names
+    return [name for name in sender_names if name in item.destination_overrides]
+
+
 async def process_items(item_ids, state, source: Source, senders: list[Sender], sender_names: list[str]):
     for item_id in item_ids:
         item = source.fetch_item(item_id)
@@ -32,19 +44,26 @@ async def process_items(item_ids, state, source: Source, senders: list[Sender], 
             continue
         print("ITEM - {} - {}".format(item_id, item.title or item.raw_text or item_id))
 
-        delivered = state["delivered"]
-        destinations = [name for name in sender_names if item_id not in delivered.get(name, [])]
-        if not destinations:
+        target_names = _target_names_for_item(item, sender_names)
+        if not target_names:
+            print("No configured sender matches item {}'s destinations - skipping.".format(item_id))
+            source.on_delivered(item_id, fully_delivered=False)
             continue
 
-        print("Sending {} to: {}".format(item_id, ", ".join(destinations)))
-        outcomes = await _deliver(item, senders, destinations)
-        if item_id not in state["known_tokens"]:
-            state["known_tokens"].append(item_id)
-        for name, succeeded in outcomes.items():
-            if succeeded:
-                delivered.setdefault(name, []).append(item_id)
-        time.sleep(1)
+        delivered = state["delivered"]
+        destinations = [name for name in target_names if item_id not in delivered.get(name, [])]
+        if destinations:
+            print("Sending {} to: {}".format(item_id, ", ".join(destinations)))
+            outcomes = await _deliver(item, senders, destinations)
+            if item_id not in state["known_tokens"]:
+                state["known_tokens"].append(item_id)
+            for name, succeeded in outcomes.items():
+                if succeeded:
+                    delivered.setdefault(name, []).append(item_id)
+            time.sleep(1)
+
+        fully_delivered = all(item_id in delivered.get(name, []) for name in target_names)
+        source.on_delivered(item_id, fully_delivered)
 
 
 def run(source: Source, senders: list[Sender]):

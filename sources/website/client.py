@@ -1,24 +1,17 @@
-"""Website-as-a-source: the GitHub Pages form under docs/ commits a new
-photo/video + caption directly into this repo's submissions/ folder via the
-GitHub Contents API. Since the GitHub Actions workflow always checks out
-the full repo before running main.py, this source just reads those files
-off disk - no API polling needed on the bot's side.
+"""Website-as-a-source: the GitHub Pages form under docs/ posts a new
+photo/video + caption + promo code + destination chat ids to a small
+Cloudflare Worker (see worker/), which validates the promo code's trial
+window and stores the submission. This source polls that Worker's private
+API - the bot never touches a repo-committed file for this, and no bot
+token or repo-write credential is ever collected from a customer.
 
-Layout the form writes:
-  submissions/<id>.json         {"caption": "...", "media_filename": "...", "media_type": "photo"|"video"}
-  submissions/media/<filename>  the actual photo/video file
-
-Unlike telegram_relay, this content doesn't exist anywhere yet, so it's
-delivered to every configured sender (target_senders stays None).
-
-Cleanup tradeoff: processed submission files are deleted right after being
-read, before delivery is confirmed to have succeeded. If a send fails, the
-content is gone rather than retried - acceptable here since, unlike a Divar
-listing, you can just resubmit through the form. The GitHub Actions workflow
-commits these deletions back to the repo alongside tokens.json.
+Unlike telegram_relay (which already exists on Telegram) or Divar (which
+always goes to every configured sender), a website submission specifies
+its own destinations per item - Item.destination_overrides restricts
+delivery to just the platforms the customer filled in, using the chat id
+they gave rather than your own default channel.
 """
-import json
-import os
+import requests
 
 import config
 from core.models import Item, Media
@@ -26,80 +19,96 @@ from sources.base import Source
 from sources.common.channel_links import cross_promotion_links
 from sources.common.quotes import random_nature_quote
 
-_SUBMISSIONS_DIR = "submissions"
-_MEDIA_DIR = os.path.join(_SUBMISSIONS_DIR, "media")
+_DESTINATION_KEY_TO_SENDER = {
+    "telegram_chat_id": "telegram",
+    "bale_chat_id": "bale",
+    "rubika_chat_id": "rubika",
+    "eitaa_chat_id": "eitaa",
+}
 
 
 class WebsiteSource(Source):
     name = "website"
-    # This content doesn't exist anywhere yet - unlike telegram_relay,
-    # deliver it everywhere that's configured.
+    # No fixed restriction here - each item narrows itself via
+    # destination_overrides, computed in fetch_item below.
     target_senders = None
 
+    def _headers(self) -> dict:
+        return {"Authorization": "Bearer {}".format(config.WEBSITE_API_TOKEN)}
+
     def fetch_new_ids(self, state: dict) -> list[str]:
-        if not os.path.isdir(_SUBMISSIONS_DIR):
+        if not config.WEBSITE_API_URL or not config.WEBSITE_API_TOKEN:
+            print("website: WEBSITE_API_URL/WEBSITE_API_TOKEN not configured - skipping.")
             return []
 
-        return sorted(
-            filename[: -len(".json")]
-            for filename in os.listdir(_SUBMISSIONS_DIR)
-            if filename.endswith(".json")
-        )
+        try:
+            response = requests.get(
+                "{}/pending".format(config.WEBSITE_API_URL.rstrip("/")),
+                headers=self._headers(),
+                timeout=config.MESSENGER_REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            return response.json().get("ids", [])
+        except requests.RequestException as error:
+            print("website: failed to list pending submissions: {}".format(error))
+            return []
 
     def fetch_item(self, item_id: str) -> Item | None:
-        json_path = os.path.join(_SUBMISSIONS_DIR, "{}.json".format(item_id))
         try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                submission = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError) as error:
-            print("website: could not read submission {}: {}".format(item_id, error))
+            response = requests.get(
+                "{}/submission/{}".format(config.WEBSITE_API_URL.rstrip("/"), item_id),
+                headers=self._headers(),
+                timeout=config.MESSENGER_REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            submission = response.json()
+        except requests.RequestException as error:
+            print("website: failed to fetch submission {}: {}".format(item_id, error))
             return None
 
         caption = submission.get("caption", "")
-        media_filename = submission.get("media_filename")
-        media_type = submission.get("media_type", "photo")
+        media_type = submission.get("media_type")
 
         media = []
-        if media_filename:
-            media_path = os.path.join(_MEDIA_DIR, media_filename)
-            if os.path.exists(media_path):
-                media.append(Media(type=media_type, url=self._raw_url(media_filename)))
-            else:
-                print("website: media file missing for {}: {}".format(item_id, media_path))
+        if media_type:
+            media_url = "{}/media/{}".format(config.WEBSITE_API_URL.rstrip("/"), item_id)
+            media.append(Media(type=media_type, url=media_url))
+
+        destinations = submission.get("destinations", {})
+        overrides = {
+            sender_name: destinations[key]
+            for key, sender_name in _DESTINATION_KEY_TO_SENDER.items()
+            if destinations.get(key)
+        }
+        if not overrides:
+            print("website: submission {} has no destinations, skipping.".format(item_id))
+            return None
 
         quote = random_nature_quote()
         if quote:
             caption = "{}\n\n{}".format(caption, quote) if caption else quote
 
-        item = Item(
+        return Item(
             id=item_id,
             raw_text=caption,
             media=media,
             channel_links=cross_promotion_links(),
+            destination_overrides=overrides,
             source=self.name,
         )
 
-        self._cleanup(item_id, media_filename)
-        return item
-
-    def _raw_url(self, media_filename: str) -> str:
-        return "https://raw.githubusercontent.com/{}/main/{}/{}".format(
-            config.GITHUB_REPO, _MEDIA_DIR, media_filename
-        )
-
-    def _cleanup(self, item_id: str, media_filename: str | None):
-        json_path = os.path.join(_SUBMISSIONS_DIR, "{}.json".format(item_id))
+    def on_delivered(self, item_id: str, fully_delivered: bool) -> None:
+        if not fully_delivered:
+            return
         try:
-            os.remove(json_path)
-        except OSError as error:
-            print("website: could not remove {}: {}".format(json_path, error))
-
-        if media_filename:
-            media_path = os.path.join(_MEDIA_DIR, media_filename)
-            try:
-                os.remove(media_path)
-            except OSError as error:
-                print("website: could not remove {}: {}".format(media_path, error))
+            response = requests.delete(
+                "{}/submission/{}".format(config.WEBSITE_API_URL.rstrip("/"), item_id),
+                headers=self._headers(),
+                timeout=config.MESSENGER_REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+        except requests.RequestException as error:
+            print("website: failed to clean up submission {}: {}".format(item_id, error))
 
 
 SOURCE = WebsiteSource()

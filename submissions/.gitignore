@@ -1,4 +1,0 @@
-*.json
-media/*
-!media/.gitkeep
-!.gitignore

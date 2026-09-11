@@ -21,6 +21,11 @@ class RubikaSender(Sender):
         return bool(config.RUBIKA_BOT_TOKEN and config.RUBIKA_CHATID)
 
     async def send(self, item: Item) -> bool:
+        chat_id = item.destination_overrides.get(self.name, config.RUBIKA_CHATID)
+        if not chat_id:
+            print("Rubika: no destination chat id.")
+            return False
+
         bot = Robot(token=config.RUBIKA_BOT_TOKEN, raise_errors=False, parse_mode="HTML")
         plain_text = build_message_text(item, escape=False, link_style="html")
         fits_as_caption = len(plain_text) <= DEFAULT_MESSAGE_LIMIT
@@ -30,7 +35,7 @@ class RubikaSender(Sender):
             if media:
                 caption = plain_text if fits_as_caption else build_short_caption(item, escape=False)
                 send = bot.send_video if media.type == "video" else bot.send_image
-                result = await send(config.RUBIKA_CHATID, path=media.url, text=caption)
+                result = await send(chat_id, path=media.url, text=caption)
                 if not result:
                     print("Rubika: {} send failed, falling back to text-only.".format(media.type))
                     fits_as_caption = False
@@ -40,7 +45,7 @@ class RubikaSender(Sender):
 
             ok = True
             for chunk in split_text_into_chunks(plain_text, DEFAULT_MESSAGE_LIMIT):
-                result = await bot.send_message(config.RUBIKA_CHATID, chunk)
+                result = await bot.send_message(chat_id, chunk)
                 ok = ok and bool(result)
             if ok:
                 print("Sent item to Rubika.")
