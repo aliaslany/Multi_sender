@@ -2,21 +2,19 @@
 
 [نسخهٔ فارسی (پیش‌فرض) →](README.md)
 
-A scheduled crawler-and-notifier **template**: point it at a *source* (a site/API to poll for new listings) and it delivers each new item — with rich details and auto-generated hashtags — to any number of *senders* (Telegram, Bale, Rubika, Eitaa, or a new one you add).
+A **multi-messenger broadcast tool**: build one piece of content (text + photo/video) once, and it goes out to any number of channels on Telegram, Bale, Rubika, and Eitaa — or a new messenger you add. Per-platform delivery is tracked independently, so a failure on one platform doesn't block or duplicate on the others.
 
-Ships with a working [Divar](https://divar.ir) (Iran's largest classifieds app) source out of the box, but the source and messenger layers are decoupled behind small interfaces, so this repo is meant to be forked and pointed at a different listing source without touching the delivery logic.
+Where that content comes from is entirely up to you, and optional — post it yourself through a form, relay it from a Telegram channel, or point a crawler *source* at another site/API. Ships with a working [Divar](https://divar.ir) (Iran's largest classifieds app) source out of the box, but that's just one of several options, not the core of the project — the source and messenger layers are decoupled behind small interfaces, so this repo is meant to be forked and pointed at a different (or no) listing source without touching the delivery logic.
 
 > The Divar source is a heavily modified fork of [debMan/divar-telegram-bot](https://github.com/debMan/divar-telegram-bot) (originally [ehcaning/divar-telegram-bot](https://github.com/ehcaning/divar-telegram-bot)). Divar changed its unofficial API since the original project was written, so the crawling logic here is substantially different.
 
 ## Features
 
+- **Multi-messenger delivery** — Telegram gets rich photo/album delivery; Bale, Rubika, and Eitaa get text + first-image delivery.
+- **Content source fully optional and swappable** — post manually through a form, relay from Telegram, or plug in a custom crawler; `main.py` doesn't care which one fed it (see [Architecture](#architecture)).
 - **Runs on GitHub Actions** — no server to host or pay for. A scheduled workflow runs the bot every few minutes.
-- **Source/sender decoupled** — `main.py` only talks to a `Source` interface and a list of `Sender`s; neither knows the other exists (see [Architecture](#architecture)).
-- **Multi-city search** *(Divar source)* — search across several cities at once (`SEARCH_CITY_IDS`).
-- **Rich item details** *(Divar source)* — pulls structured fields Divar shows on the item page (area, room count, capacity, nightly rates, amenities, etc.), not just title/price/description.
-- **Auto-generated hashtags** *(Divar source)* — combines keyword-based tags detected in the item text with Divar's own breadcrumb category chain.
 - **Channel-ready formatting** — sends photos/albums with an HTML-formatted caption and a fixed contact/footer block, no direct outbound link.
-- **Multi-messenger delivery** — Telegram gets rich photo/album delivery; Bale, Rubika, and Eitaa get text + first-image delivery. Per-platform delivery is tracked independently, so a failure on one platform doesn't block or duplicate on the others.
+- **Divar, as a ready-made crawling option** *(optional)* — multi-city search at once, structured item fields (area, room count, capacity, nightly rates, amenities) instead of just title/price, and auto-generated hashtags combining keyword detection with Divar's own category chain.
 
 ## Architecture
 
