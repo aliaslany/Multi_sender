@@ -139,12 +139,12 @@ Go to **Settings → Secrets and variables → Actions** in your fork and add:
 | `RUBIKA_CHATID` | optional | | Rubika destination chat/channel |
 | `EITAA_TOKEN` | optional | | EitaaYar API token |
 | `EITAA_CHATID` | optional | | Eitaa destination chat/channel |
-| `SOURCE_TYPE` | optional | `divar` | Which source to poll (see `sources/registry.py`); defaults to `divar` |
+| `SOURCE_TYPE` | optional | `website` | Which source to poll (see `sources/registry.py`); defaults to `website` |
 | `TELEGRAM_RELAY_CHAT_IDS` | required for `telegram_relay` | `123456789,-1001234567890` | Comma-separated chat ids allowed to post through the relay (see [Telegram-relay source](#telegram-relay-source)) |
-| `CHANNEL_LINK_LABEL` | optional | `طبیعت+` | Clickable label used for every "follow us elsewhere" footer link |
-| `TELEGRAM_CHANNEL_URL` | optional | `https://t.me/nature_plus` | Footer link to your Telegram channel; empty to omit |
-| `BALE_CHANNEL_URL` | optional | `https://ble.ir/natureplus` | Footer link to your Bale channel; empty to omit |
-| `RUBIKA_CHANNEL_URL` | optional | `https://rubika.ir/natureplus1` | Footer link to your Rubika channel; empty to omit |
+| `CHANNEL_LINK_LABEL` | optional | `دیوار ادز اسیست` | Clickable label used for every "follow us elsewhere" footer link |
+| `TELEGRAM_CHANNEL_URL` | optional | `https://t.me/divaradsassist` | Footer link to your Telegram channel; empty to omit |
+| `BALE_CHANNEL_URL` | optional | (empty) | Footer link to your Bale channel; empty to omit |
+| `RUBIKA_CHANNEL_URL` | optional | (empty) | Footer link to your Rubika channel; empty to omit |
 | `NATURE_QUOTES_URL` | optional | jsDelivr URL to `tabiat.json` | Override to point at a different quotes dataset/theme |
 | `WEBSITE_API_URL` | required for `website` | `https://multi-sender-submissions.<subdomain>.workers.dev` | URL of the deployed submission Worker (see [Website source](#website-source)) |
 | `WEBSITE_API_TOKEN` | required for `website` | | Must match the Worker's `API_TOKEN` secret (set via `wrangler secret put`) |

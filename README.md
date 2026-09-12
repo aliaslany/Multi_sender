@@ -139,12 +139,12 @@ requirements.txt
 | `RUBIKA_CHATID` | اختیاری | | چت/کانال مقصد در روبیکا |
 | `EITAA_TOKEN` | اختیاری | | توکن API ایتایار |
 | `EITAA_CHATID` | اختیاری | | چت/کانال مقصد در ایتا |
-| `SOURCE_TYPE` | اختیاری | `divar‎` | کدام منبع بررسی شود (به `sources/registry.py` نگاه کنید)؛ پیش‌فرض `divar‎` |
+| `SOURCE_TYPE` | اختیاری | `website‎` | کدام منبع بررسی شود (به `sources/registry.py` نگاه کنید)؛ پیش‌فرض `website‎` |
 | `TELEGRAM_RELAY_CHAT_IDS` | برای `telegram_relay‎` الزامی | `123456789,-1001234567890‎` | شناسه‌های چتی که اجازهٔ پست از طریق رله را دارند (به [منبع رله تلگرام](#منبع-رله-تلگرام-telegram_relay) نگاه کنید) |
-| `CHANNEL_LINK_LABEL` | اختیاری | `طبیعت+‎` | برچسب کلیک‌پذیر برای هر لینک فوتر «ما را جای دیگر هم دنبال کنید» |
-| `TELEGRAM_CHANNEL_URL` | اختیاری | `https://t.me/nature_plus‎` | لینک فوتر به کانال تلگرام شما؛ خالی بگذارید تا حذف شود |
-| `BALE_CHANNEL_URL` | اختیاری | `https://ble.ir/natureplus‎` | لینک فوتر به کانال بله شما؛ خالی بگذارید تا حذف شود |
-| `RUBIKA_CHANNEL_URL` | اختیاری | `https://rubika.ir/natureplus1‎` | لینک فوتر به کانال روبیکای شما؛ خالی بگذارید تا حذف شود |
+| `CHANNEL_LINK_LABEL` | اختیاری | `دیوار ادز اسیست‎` | برچسب کلیک‌پذیر برای هر لینک فوتر «ما را جای دیگر هم دنبال کنید» |
+| `TELEGRAM_CHANNEL_URL` | اختیاری | `https://t.me/divaradsassist‎` | لینک فوتر به کانال تلگرام شما؛ خالی بگذارید تا حذف شود |
+| `BALE_CHANNEL_URL` | اختیاری | (خالی) | لینک فوتر به کانال بله شما؛ خالی بگذارید تا حذف شود |
+| `RUBIKA_CHANNEL_URL` | اختیاری | (خالی) | لینک فوتر به کانال روبیکای شما؛ خالی بگذارید تا حذف شود |
 | `NATURE_QUOTES_URL` | اختیاری | آدرس jsDelivr برای `tabiat.json‎` | برای استفاده از یک دیتاست/موضوع نقل‌قول دیگر تغییرش دهید |
 | `WEBSITE_API_URL` | برای `website‎` الزامی | `https://multi-sender-submissions.<subdomain>.workers.dev‎` | آدرس Worker مستقرشدهٔ ثبت پست (به [منبع سایت](#منبع-سایت-website) نگاه کنید) |
 | `WEBSITE_API_TOKEN` | برای `website‎` الزامی | | باید با سکرت `API_TOKEN‎` روی Worker (تنظیم‌شده با `wrangler secret put‎`) یکی باشد |

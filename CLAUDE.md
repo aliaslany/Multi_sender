@@ -23,7 +23,7 @@ Or via Docker: `docker compose up --build` (reads `.env`; see [Dockerfile](Docke
 
 There's no watch/daemon mode — `python main.py` always does exactly one fetch-and-deliver pass, matching how the GitHub Actions workflow invokes it.
 
-Required env vars differ by `SOURCE_TYPE` (default `divar`, which needs `SEARCH_CITY_IDS` and `SEARCH_CATEGORY`); see [config.py](config.py) for the full list and defaults, and [README.en.md](README.en.md)'s secrets table for what each one does. A given run only polls **one** `SOURCE_TYPE` — running Divar crawling and the website-submission wizard at the same time needs two separate scheduled workflows, not one.
+Required env vars differ by `SOURCE_TYPE` (default `website`; the optional `divar` source instead needs `SEARCH_CITY_IDS` and `SEARCH_CATEGORY`); see [config.py](config.py) for the full list and defaults, and [README.en.md](README.en.md)'s secrets table for what each one does. A given run only polls **one** `SOURCE_TYPE` — running Divar crawling and the website-submission wizard at the same time needs two separate scheduled workflows, not one.
 
 ## Architecture
 
@@ -62,10 +62,10 @@ docs/                        # GitHub Pages submission wizard (frontend for the 
 - `tokens.json` tracks delivery **per platform**, not just per item — a failure on one sender is retried on the next run without re-sending to senders that already succeeded (`storage.py`, `core/orchestrator.py`).
 - Bale and Eitaa senders use raw HTTP instead of a library: `python-bale-bot`'s `Bot.connect()` runs an infinite polling loop before its HTTP session is usable (wrong fit for a one-shot cron run), and no maintained Eitaa library exists. Rubika's `rubka` library is used because it supports one-shot async calls with no polling step.
 
-**⚠️ README vs. code drift on the `website` source:** [README.md](README.md)/[README.en.md](README.en.md)'s architecture section text still describes it as reading files committed directly to a `submissions/` folder by the GitHub Pages form. The actual implementation ([sources/website/client.py](sources/website/client.py)) instead polls a Cloudflare Worker's private API (`worker/`, deployed separately via `wrangler`) that holds submissions in KV storage, including promo-code trial gating — see [worker/README.md](worker/README.md) and the endpoint list at the top of [worker/src/index.js](worker/src/index.js). Trust the code over that section of the README.
-
 ## Known limitations (from README)
 
 - Divar source uses Divar's **unofficial** web API, reverse-engineered from browser traffic — can break if Divar changes it.
 - Hashtag detection is keyword/substring-based.
 - `telegram_relay` treats every Telegram message as its own post — a multi-photo album becomes several separate posts on destination platforms rather than one grouped album.
+- `website`'s promo codes have no listing/revocation mechanism yet beyond editing the Worker's KV data directly.
+- `website` media is stored as base64 in KV (25MB per-value cap), so very large videos (~20MB+) are rejected.
