@@ -132,3 +132,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 RubkaSaveMessage.db
+
+# Wrangler (Cloudflare Worker) local cache
+worker/.wrangler/
