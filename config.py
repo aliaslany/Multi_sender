@@ -2,7 +2,7 @@
 import os
 
 # Which source module to poll for new listings. See sources/registry.py.
-SOURCE_TYPE = os.environ.get("SOURCE_TYPE", "divar")
+SOURCE_TYPE = os.environ.get("SOURCE_TYPE", "website")
 
 DIVAR_SEARCH_URL = "https://api.divar.ir/v8/postlist/w/search"
 DIVAR_POST_DETAIL_URL = "https://api.divar.ir/v8/posts-v2/web/{token}"
@@ -51,10 +51,10 @@ WEBSITE_API_TOKEN = os.environ.get("WEBSITE_API_TOKEN", "")
 # "Follow us elsewhere" footer links appended to relayed posts. Same label
 # across platforms by design (brand consistency); only the destination
 # differs. Set any of these empty to drop that platform from the footer.
-CHANNEL_LINK_LABEL = os.environ.get("CHANNEL_LINK_LABEL", "طبیعت+")
-TELEGRAM_CHANNEL_URL = os.environ.get("TELEGRAM_CHANNEL_URL", "https://t.me/nature_plus")
-BALE_CHANNEL_URL = os.environ.get("BALE_CHANNEL_URL", "https://ble.ir/natureplus")
-RUBIKA_CHANNEL_URL = os.environ.get("RUBIKA_CHANNEL_URL", "https://rubika.ir/natureplus1")
+CHANNEL_LINK_LABEL = os.environ.get("CHANNEL_LINK_LABEL", "دیوار ادز اسیست")
+TELEGRAM_CHANNEL_URL = os.environ.get("TELEGRAM_CHANNEL_URL", "https://t.me/divaradsassist")
+BALE_CHANNEL_URL = os.environ.get("BALE_CHANNEL_URL", "")
+RUBIKA_CHANNEL_URL = os.environ.get("RUBIKA_CHANNEL_URL", "")
 
 BALE_API_BASE_URL = os.environ.get("BALE_API_BASE_URL", "https://tapi.bale.ai")
 RUBIKA_API_BASE_URL = os.environ.get(

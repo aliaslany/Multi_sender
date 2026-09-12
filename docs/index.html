@@ -3,7 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>طبیعت+ | ارسال پست</title>
+<title>دیوار ادز اسیست | ارسال خودکار آگهی به تلگرام، بله، روبیکا و ایتا</title>
+<meta name="description" content="یک پست را یک‌بار بفرستید تا خودکار در تلگرام، بله، روبیکا و ایتا منتشر شود. کد آزمایشی رایگان بگیرید و همین حالا امتحان کنید.">
+<link rel="canonical" href="https://aliaslany.github.io/Multi_sender/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fa_IR">
+<meta property="og:title" content="دیوار ادز اسیست | پخش همزمان پست در چند پیام‌رسان">
+<meta property="og:description" content="یک پست را یک‌بار بفرستید تا خودکار در تلگرام، بله، روبیکا و ایتا منتشر شود. کد آزمایشی رایگان بگیرید و همین حالا امتحان کنید.">
+<meta property="og:url" content="https://aliaslany.github.io/Multi_sender/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="دیوار ادز اسیست">
+<meta name="twitter:description" content="پخش همزمان یک پست در تلگرام، بله، روبیکا و ایتا — با کد آزمایشی رایگان.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23101a14'/%3E%3Cpath d='M22 2 11 13' stroke='%23e0c15c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M22 2 15 22l-4-9-9-4Z' stroke='%23e0c15c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "دیوار ادز اسیست",
+  "url": "https://aliaslany.github.io/Multi_sender/",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "inLanguage": "fa",
+  "description": "ارسال خودکار یک پست به تلگرام، بله، روبیکا و ایتا به‌طور همزمان.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "IRR",
+    "description": "دورهٔ آزمایشی رایگان"
+  },
+  "sameAs": ["https://t.me/divaradsassist"]
+}
+</script>
 <style>
   @import url('https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css');
 
@@ -11,6 +41,7 @@
     --bg-0: #101a14;
     --bg-1: #16241a;
     --card: #1b2b1f;
+    --card-soft: #1e3123;
     --line: #2b3d2f;
     --text: #eee7d8;
     --text-dim: #9fb09f;
@@ -65,7 +96,7 @@
     body::before { animation: none; }
   }
 
-  .wrap { width: 100%; max-width: 480px; position: relative; z-index: 1; }
+  .wrap { width: 100%; max-width: 560px; position: relative; z-index: 1; }
 
   .eyebrow {
     color: var(--amber-soft);
@@ -96,9 +127,78 @@
   .sub {
     color: var(--text-dim);
     font-size: 14px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
     line-height: 1.9;
   }
+
+  /* ---------- "How it works" strip ---------- */
+  .hiw {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .hiw-title {
+    font-size: 13px;
+    color: var(--amber-soft);
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .hiw-steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .hiw-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+  .hiw-icon {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--amber-soft);
+  }
+  .hiw-icon svg { width: 22px; height: 22px; }
+  .hiw-step .hiw-label { font-size: 12px; line-height: 1.6; color: var(--text-dim); }
+  .hiw-arrow {
+    color: var(--line);
+    font-size: 18px;
+    padding-top: 12px;
+    flex: 0 0 auto;
+  }
+
+  /* ---------- Wizard progress ---------- */
+  .wizard-progress {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 18px;
+  }
+  .wp-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .wp-circle {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--bg-1);
+    border: 1.5px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    color: var(--text-dim);
+    transition: all 0.2s ease;
+  }
+  .wp-item.active .wp-circle { border-color: var(--amber); color: var(--amber-soft); background: rgba(201,162,39,0.12); }
+  .wp-item.done .wp-circle { border-color: var(--sage); color: var(--sage); background: rgba(127,161,127,0.12); }
+  .wp-label { font-size: 10.5px; color: var(--text-dim); text-align: center; }
+  .wp-item.active .wp-label { color: var(--amber-soft); }
+  .wp-line { flex: 1; height: 1.5px; background: var(--line); margin-top: -20px; }
+  .wp-line.done { background: var(--sage); }
 
   form {
     background: var(--card);
@@ -109,6 +209,10 @@
     flex-direction: column;
     gap: 18px;
   }
+
+  .step-heading { margin: 0 0 2px; }
+  .step-heading h2 { font-size: 18px; margin: 0 0 4px; }
+  .step-heading p { font-size: 13px; color: var(--text-dim); margin: 0; line-height: 1.8; }
 
   label {
     font-size: 13px;
@@ -165,27 +269,126 @@
   }
   .preview.visible { display: block; }
 
-  details {
-    border-top: 1px solid var(--line);
-    padding-top: 14px;
-  }
-  summary {
-    color: var(--text-dim);
-    font-size: 13px;
-    cursor: pointer;
-    user-select: none;
-  }
-  details[open] summary { margin-bottom: 12px; }
-
-  .remember-row {
+  /* ---------- Platform picker (step 1) ---------- */
+  .platform-list { display: flex; flex-direction: column; gap: 10px; }
+  .platform-card {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 10px;
-    font-size: 13px;
-    color: var(--text-dim);
+    gap: 12px;
+    background: var(--bg-1);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .remember-row input { accent-color: var(--amber); }
+  .platform-card:has(input:checked), .platform-card.selected { border-color: var(--amber); background: rgba(201,162,39,0.08); }
+  .platform-card input { accent-color: var(--amber); width: 18px; height: 18px; flex: 0 0 auto; }
+  .platform-badge {
+    width: 34px; height: 34px; border-radius: 50%;
+    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .platform-badge svg { width: 18px; height: 18px; }
+  .platform-info { flex: 1; }
+  .platform-name { font-size: 14.5px; font-weight: 700; margin-bottom: 2px; }
+  .platform-capability { font-size: 12px; color: var(--text-dim); }
+
+  /* ---------- Connect step (step 2) ---------- */
+  .connect-card {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .connect-card:last-child { margin-bottom: 0; }
+  .connect-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .connect-head .platform-badge { width: 28px; height: 28px; }
+  .connect-head .platform-badge svg { width: 15px; height: 15px; }
+  .connect-head .platform-name { font-size: 14px; margin: 0; }
+
+  details.help {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    background: var(--card-soft);
+  }
+  details.help summary {
+    color: var(--sage);
+    font-size: 12.5px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  details.help[open] summary { margin-bottom: 10px; color: var(--amber-soft); }
+  details.help ol { margin: 0; padding-inline-start: 20px; font-size: 12.5px; color: var(--text-dim); line-height: 2; }
+  details.help .bot-username {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-0);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 2px 8px;
+    color: var(--amber-soft);
+    font-family: monospace;
+    direction: ltr;
+    unicode-bidi: embed;
+  }
+  details.help .copy-btn {
+    background: none; border: none; color: var(--sage); cursor: pointer;
+    font-size: 11px; padding: 0; font-family: inherit;
+  }
+  .support-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--amber-soft);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--amber-soft);
+  }
+
+  /* ---------- Promo step (step 3) ---------- */
+  .promo-box {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .promo-explain { font-size: 12.5px; color: var(--text-dim); line-height: 1.9; margin-bottom: 12px; }
+  .support-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    background: rgba(127,161,127,0.12);
+    border: 1px solid rgba(127,161,127,0.3);
+    color: var(--sage);
+    text-decoration: none;
+    font-size: 12.5px;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  /* ---------- Review (step 4) ---------- */
+  .review-box {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  .review-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .review-row:last-child { border-bottom: none; }
+  .review-row .k { color: var(--text-dim); }
+  .review-row .v { color: var(--text); font-weight: 600; text-align: left; }
+
+  .wizard-nav { display: flex; gap: 10px; }
+  .wizard-nav button { flex: 1; }
 
   button {
     background: linear-gradient(90deg, var(--amber), var(--amber-soft));
@@ -199,10 +402,18 @@
     cursor: pointer;
     transition: filter 0.15s ease, transform 0.1s ease;
   }
+  button.secondary {
+    background: var(--bg-1);
+    color: var(--text);
+    border: 1px solid var(--line);
+  }
   button:hover:not(:disabled) { filter: brightness(1.08); }
   button:active:not(:disabled) { transform: scale(0.99); }
   button:disabled { opacity: 0.55; cursor: not-allowed; }
   button:focus-visible { outline: 2px solid var(--amber-soft); outline-offset: 2px; }
+
+  .field-error { color: var(--error); font-size: 12.5px; margin-top: 6px; display: none; }
+  .field-error.visible { display: block; }
 
   .status {
     font-size: 13.5px;
@@ -216,68 +427,253 @@
   .status.error   { background: rgba(217,119,87,0.12); color: var(--error); border: 1px solid rgba(217,119,87,0.3); }
   .status.success { background: rgba(201,162,39,0.14); color: var(--amber-soft); border: 1px solid rgba(201,162,39,0.35); }
 
+  /* ---------- Success screen ---------- */
+  .success-screen { text-align: center; padding: 12px 4px; }
+  .success-icon {
+    width: 64px; height: 64px; margin: 0 auto 16px;
+    border-radius: 50%;
+    background: rgba(127,161,127,0.15);
+    border: 1px solid rgba(127,161,127,0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sage);
+  }
+  .success-icon svg { width: 30px; height: 30px; }
+  .success-screen h2 { font-size: 18px; margin: 0 0 8px; }
+  .success-screen p { font-size: 13.5px; color: var(--text-dim); line-height: 1.9; margin: 0 0 20px; }
+
   footer {
     text-align: center;
     margin-top: 20px;
     font-size: 12px;
     color: var(--text-dim);
     opacity: 0.7;
+    line-height: 2;
   }
+  footer a { color: var(--amber-soft); }
+
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow"><span class="dot"></span> طبیعت+</div>
+  <div class="eyebrow"><span class="dot"></span> دیوار ادز اسیست</div>
   <h1>ارسال پست جدید</h1>
-  <p class="sub">یک عکس یا ویدیو با متن دلخواه بفرستید — به‌طور خودکار در اجرای بعدی ربات (حداکثر تا ۱۰ دقیقه دیگر) به مقصدهایی که مشخص می‌کنید ارسال می‌شود.</p>
+  <p class="sub">یک عکس یا ویدیو با متن دلخواه بفرستید — به‌طور خودکار در اجرای بعدی ربات (حداکثر تا ۱۰ دقیقه دیگر) به کانال‌هایی که مشخص می‌کنید ارسال می‌شود.</p>
 
-  <form id="postForm">
-    <div>
-      <label for="caption">متن پست</label>
-      <textarea id="caption" placeholder="غروبِ یکی از روزای خیلی گرم تابستون…"></textarea>
-    </div>
-
-    <div>
-      <label>عکس یا ویدیو (اختیاری)</label>
-      <div class="file-drop" id="fileDrop">
-        <input type="file" id="mediaFile" accept="image/*,video/*">
-        <div class="hint" id="fileHint">برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید</div>
-        <div class="filename" id="fileName"></div>
+  <!-- ============ How it works (static explainer) ============ -->
+  <section class="hiw" aria-label="روش کار">
+    <div class="hiw-title">این ربات چطور کار می‌کند؟</div>
+    <div class="hiw-steps">
+      <div class="hiw-step">
+        <div class="hiw-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6l-4 4H4a1 1 0 0 0-1 1Z"/><path d="M15 8a4 4 0 0 1 0 8"/><path d="M18 5a8 8 0 0 1 0 14"/></svg>
+        </div>
+        <div class="hiw-label">کانال‌های خود را به ربات معرفی می‌کنید</div>
       </div>
-      <img id="preview" class="preview" alt="پیش‌نمایش">
+      <div class="hiw-arrow">←</div>
+      <div class="hiw-step">
+        <div class="hiw-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a2 2 0 0 0 2 2h1a1.5 1.5 0 0 1 0 3H5"/><path d="M21 10v4a2 2 0 0 1-2 2h-1a1.5 1.5 0 0 0 0 3h1"/><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M12 6v14" stroke-dasharray="2 2"/></svg>
+        </div>
+        <div class="hiw-label">کد آزمایشی رایگان را وارد می‌کنید</div>
+      </div>
+      <div class="hiw-arrow">←</div>
+      <div class="hiw-step">
+        <div class="hiw-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+        </div>
+        <div class="hiw-label">متن و عکس/ویدیو را می‌فرستید</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Wizard progress ============ -->
+  <div class="wizard-progress" id="wizardProgress">
+    <div class="wp-item" data-step="1"><div class="wp-circle">۱</div><div class="wp-label">پلتفرم‌ها</div></div>
+    <div class="wp-line" data-line="1"></div>
+    <div class="wp-item" data-step="2"><div class="wp-circle">۲</div><div class="wp-label">اتصال کانال</div></div>
+    <div class="wp-line" data-line="2"></div>
+    <div class="wp-item" data-step="3"><div class="wp-circle">۳</div><div class="wp-label">کد آزمایشی</div></div>
+    <div class="wp-line" data-line="3"></div>
+    <div class="wp-item" data-step="4"><div class="wp-circle">۴</div><div class="wp-label">ارسال پست</div></div>
+  </div>
+
+  <form id="postForm" novalidate>
+
+    <!-- ============ Step 1: choose platforms ============ -->
+    <div class="step" data-step="1">
+      <div class="step-heading">
+        <h2>پست‌تان کجا منتشر شود؟</h2>
+        <p>هر پلتفرمی که کانال دارید انتخاب کنید. بعداً هر وقت خواستید می‌توانید تغییرش دهید.</p>
+      </div>
+      <div class="platform-list" id="platformList"></div>
+      <div class="field-error" id="step1Error">حداقل یک پلتفرم را انتخاب کنید.</div>
     </div>
 
-    <div>
-      <label for="promoCode">کد تبلیغی</label>
-      <input type="text" id="promoCode" placeholder="کد آزمایشی خود را وارد کنید" required>
-      <div class="hint" id="promoHint" style="margin-top:6px;"></div>
+    <!-- ============ Step 2: connect each channel ============ -->
+    <div class="step" data-step="2" hidden>
+      <div class="step-heading">
+        <h2>کانال‌های خود را وصل کنید</h2>
+        <p>برای هر پلتفرم، ربات ما را ادمین کانال خود کنید و سپس شناسه کانال را همان‌جا وارد کنید.</p>
+      </div>
+      <div id="connectCards"></div>
+      <div class="field-error" id="step2Error">شناسه هر کانالی که انتخاب کرده‌اید را وارد کنید.</div>
     </div>
 
-    <details id="destinationsDetails" open>
-      <summary>مقصدهای ارسال (حداقل یکی را پر کنید)</summary>
-      <label for="telegramChatId">شناسه چت/کانال تلگرام</label>
-      <input type="text" id="telegramChatId" placeholder="@your_channel یا -1001234567890">
-      <label for="baleChatId" style="margin-top:12px;">شناسه چت/کانال بله</label>
-      <input type="text" id="baleChatId" placeholder="@your_channel">
-      <label for="rubikaChatId" style="margin-top:12px;">شناسه چت/کانال روبیکا</label>
-      <input type="text" id="rubikaChatId" placeholder="@your_channel">
-      <label for="eitaaChatId" style="margin-top:12px;">شناسه چت/کانال ایتا</label>
-      <input type="text" id="eitaaChatId" placeholder="@your_channel">
-    </details>
+    <!-- ============ Step 3: promo code ============ -->
+    <div class="step" data-step="3" hidden>
+      <div class="step-heading">
+        <h2>کد آزمایشی رایگان</h2>
+        <p>برای شروع دورهٔ آزمایشی، کدی که از پشتیبانی گرفته‌اید را وارد کنید.</p>
+      </div>
+      <div class="promo-box">
+        <div class="promo-explain">کد آزمایشی رایگان توسط پشتیبانی طبیعت+ در اختیار شما قرار می‌گیرد و از اولین پستی که بفرستید شروع به شمارش می‌کند. اگر هنوز کدی ندارید، از دکمهٔ زیر برای دریافت آن استفاده کنید.</div>
+        <a class="support-cta" id="getPromoLink" href="#" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          دریافت کد آزمایشی رایگان از پشتیبانی
+        </a>
+        <div style="margin-top:16px;">
+          <label for="promoCode">کد تبلیغی</label>
+          <input type="text" id="promoCode" placeholder="مثلاً SUMMER7">
+          <div class="hint" id="promoHint" style="margin-top:6px; font-size:12.5px;"></div>
+        </div>
+      </div>
+      <div class="field-error" id="step3Error">کد آزمایشی معتبر لازم است.</div>
+    </div>
 
-    <div id="status" class="status"></div>
+    <!-- ============ Step 4: content + review + submit ============ -->
+    <div class="step" data-step="4" hidden>
+      <div class="step-heading">
+        <h2>متن و رسانهٔ پست</h2>
+        <p>پیش از ارسال، خلاصهٔ انتخاب‌هایتان را هم می‌بینید.</p>
+      </div>
 
-    <button type="submit" id="submitBtn">ارسال پست</button>
+      <div>
+        <label for="caption">متن پست</label>
+        <textarea id="caption" placeholder="غروبِ یکی از روزای خیلی گرم تابستون…"></textarea>
+      </div>
+
+      <div>
+        <label>عکس یا ویدیو (اختیاری)</label>
+        <div class="file-drop" id="fileDrop">
+          <input type="file" id="mediaFile" accept="image/*,video/*">
+          <div class="hint" id="fileHint">برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید</div>
+          <div class="filename" id="fileName"></div>
+        </div>
+        <img id="preview" class="preview" alt="پیش‌نمایش">
+      </div>
+
+      <div class="review-box" id="reviewBox"></div>
+
+      <div id="status" class="status"></div>
+    </div>
+
+    <!-- ============ Success screen ============ -->
+    <div class="step" data-step="success" hidden>
+      <div class="success-screen">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2 id="successTitle">پست ثبت شد</h2>
+        <p id="successMessage">ظرف حداکثر ۱۰ دقیقه به کانال‌های انتخابی شما ارسال می‌شود.</p>
+        <button type="button" class="secondary" id="newPostBtn">ارسال پست جدید</button>
+      </div>
+    </div>
+
+    <div class="wizard-nav" id="wizardNav">
+      <button type="button" class="secondary" id="backBtn" hidden>مرحلهٔ قبل</button>
+      <button type="button" id="nextBtn">مرحلهٔ بعد</button>
+      <button type="submit" id="submitBtn" hidden>ارسال پست</button>
+    </div>
   </form>
 
-  <footer>کد تبلیغی و مقصدها را ربات دریافت می‌کند، نه توکن یا اطلاعات حساس شما · هیچ توکن گیت‌هابی لازم نیست</footer>
+  <footer>
+    کد تبلیغی و مقصدها را ربات دریافت می‌کند، نه توکن یا اطلاعات حساس شما · هیچ توکن گیت‌هابی لازم نیست
+    <br>
+    <a href="about.html">دربارهٔ این پروژه و لینک‌های ما</a>
+  </footer>
 </div>
 
 <script>
-// Set this to your deployed Worker's URL once (see worker/ in this repo).
+// ---- Fill these in once before publishing (see worker/README.md) ----
 const API_BASE = "https://multi-sender-submissions.YOUR_SUBDOMAIN.workers.dev";
+// Public @username of the bot customers must add as admin to their own
+// channel, per platform. Leave a platform empty to hide its bot-username
+// line (e.g. if Eitaa is handled manually by support instead).
+const BOT_USERNAMES = {
+  telegram: "YOUR_TELEGRAM_BOT",
+  bale: "YOUR_BALE_BOT",
+  rubika: "YOUR_RUBIKA_BOT",
+};
+// Where "دریافت کد آزمایشی رایگان" / "کمک از پشتیبانی" buttons send people.
+const SUPPORT_CONTACT_URL = "https://t.me/Divarassist";
+
+// Telegram's icon is its real paper-plane mark. Bale/Rubika/Eitaa use a
+// generic message-bubble glyph in the platform's brand color rather than
+// a claimed reproduction of their proprietary logo (not verified accurate).
+const ICONS = {
+  telegram: '<svg viewBox="0 0 24 24" fill="white"><path d="M2 10.5 21.5 3l-3 17-6.5-5-3.2 3-.6-5.2z"/></svg>',
+  bubble: '<svg viewBox="0 0 24 24" fill="white"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>',
+};
+
+const PLATFORMS = [
+  {
+    key: "telegram", label: "تلگرام", color: "#29A9EB", icon: ICONS.telegram,
+    capability: "متن کامل + عکس/آلبوم و ویدیو",
+    formKey: "telegram_chat_id",
+    help: {
+      confident: true,
+      steps: [
+        `وارد کانال خود شوید ← «مدیران» (Administrators) ← «افزودن مدیر».`,
+        `نام کاربری ربات، <span class="bot-username">@${BOT_USERNAMES.telegram}</span> را جست‌وجو و اضافه کنید (دسترسی «ارسال پیام» کافی است).`,
+        `برای گرفتن شناسهٔ کانال: یک پست از کانال را برای <span class="bot-username">@userinfobot</span> فوروارد کنید تا عددی مثل ‎-1001234567890 برایتان بفرستد. اگر کانال شما عمومی است، همان @نام‌کاربری کانال هم کافی است.`,
+      ],
+    },
+  },
+  {
+    key: "bale", label: "بله", color: "#f2a541", icon: ICONS.bubble,
+    capability: "متن + اولین عکس",
+    formKey: "bale_chat_id",
+    help: {
+      confident: false,
+      steps: [
+        `وارد تنظیمات کانال بلهٔ خود شوید و ربات، <span class="bot-username">@${BOT_USERNAMES.bale}</span> را به‌عنوان ادمین با دسترسی ارسال پیام اضافه کنید.`,
+        `شناسهٔ کانال را از تنظیمات کانال یا از خود ربات بله می‌توانید پیدا کنید.`,
+      ],
+    },
+  },
+  {
+    key: "rubika", label: "روبیکا", color: "#f0483e", icon: ICONS.bubble,
+    capability: "متن + اولین عکس یا ویدیو",
+    formKey: "rubika_chat_id",
+    help: {
+      confident: false,
+      steps: [
+        `وارد تنظیمات کانال روبیکای خود شوید و ربات، <span class="bot-username">@${BOT_USERNAMES.rubika}</span> را به‌عنوان ادمین با دسترسی ارسال پیام اضافه کنید.`,
+        `شناسهٔ کانال را از تنظیمات کانال یا از خود ربات روبیکا می‌توانید پیدا کنید.`,
+      ],
+    },
+  },
+  {
+    key: "eitaa", label: "ایتا", color: "#2bb673", icon: ICONS.bubble,
+    capability: "متن + اولین عکس یا ویدیو",
+    formKey: "eitaa_chat_id",
+    help: {
+      confident: false,
+      manualOnly: true,
+      steps: [
+        `اتصال کانال ایتا کمی فرق دارد و بهتر است پشتیبانی این مرحله را برایتان انجام دهد.`,
+      ],
+    },
+  },
+];
+
+// ---------------------------------------------------------------------
 
 const form = document.getElementById('postForm');
+const platformListEl = document.getElementById('platformList');
+const connectCardsEl = document.getElementById('connectCards');
+const reviewBoxEl = document.getElementById('reviewBox');
 const captionEl = document.getElementById('caption');
 const fileInput = document.getElementById('mediaFile');
 const fileDrop = document.getElementById('fileDrop');
@@ -287,9 +683,104 @@ const preview = document.getElementById('preview');
 const promoInput = document.getElementById('promoCode');
 const promoHint = document.getElementById('promoHint');
 const statusEl = document.getElementById('status');
+const backBtn = document.getElementById('backBtn');
+const nextBtn = document.getElementById('nextBtn');
 const submitBtn = document.getElementById('submitBtn');
-const destinationIds = ['telegramChatId', 'baleChatId', 'rubikaChatId', 'eitaaChatId'];
+const getPromoLink = document.getElementById('getPromoLink');
+const newPostBtn = document.getElementById('newPostBtn');
 
+getPromoLink.href = SUPPORT_CONTACT_URL;
+
+const STORAGE_KEY = 'multiSenderSubmissionPrefs';
+const chatIdValues = {}; // { platformKey: value }
+let promoValid = null;   // null = not checked yet, true/false once checked
+let currentStep = 1;     // 1..4, or 'success'
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { platforms: [], chatIds: {} };
+    const parsed = JSON.parse(raw);
+    return { platforms: parsed.platforms || [], chatIds: parsed.chatIds || {} };
+  } catch {
+    return { platforms: [], chatIds: {} };
+  }
+}
+
+function savePrefs() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      platforms: selectedPlatforms(),
+      chatIds: chatIdValues,
+    }));
+  } catch { /* ignore (private mode, quota, etc.) */ }
+}
+
+const prefs = loadPrefs();
+Object.assign(chatIdValues, prefs.chatIds);
+
+// ---------------- Step 1: platform picker ----------------
+platformListEl.innerHTML = PLATFORMS.map(p => `
+  <label class="platform-card">
+    <input type="checkbox" name="platform" value="${p.key}" ${prefs.platforms.includes(p.key) ? 'checked' : ''}>
+    <div class="platform-badge" style="background:${p.color}">${p.icon}</div>
+    <div class="platform-info">
+      <div class="platform-name">${p.label}</div>
+      <div class="platform-capability">${p.capability}</div>
+    </div>
+  </label>
+`).join('');
+platformListEl.querySelectorAll('input[name="platform"]:checked').forEach(el => el.closest('.platform-card').classList.add('selected'));
+
+function selectedPlatforms() {
+  return Array.from(platformListEl.querySelectorAll('input[name="platform"]:checked')).map(el => el.value);
+}
+
+function escapeAttr(value) {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+platformListEl.addEventListener('change', e => {
+  if (e.target.name !== 'platform') return;
+  e.target.closest('.platform-card').classList.toggle('selected', e.target.checked);
+});
+
+// ---------------- Step 2: connect cards (built dynamically) ----------------
+function renderConnectCards() {
+  const selected = selectedPlatforms();
+  connectCardsEl.innerHTML = selected.map(key => {
+    const p = PLATFORMS.find(pl => pl.key === key);
+    const helpNote = (p.help.confident || p.help.manualOnly)
+      ? ''
+      : `<div style="margin-top:8px; font-size:11.5px; color:var(--text-dim);">مطمئن نیستید؟ <a class="support-link" href="${SUPPORT_CONTACT_URL}" target="_blank" rel="noopener">از پشتیبانی بپرسید</a></div>`;
+    const stepsHtml = p.help.steps.map(s => `<li>${s}</li>`).join('');
+    return `
+      <div class="connect-card" data-platform="${key}">
+        <div class="connect-head">
+          <div class="platform-badge" style="background:${p.color}">${p.icon}</div>
+          <div class="platform-name">${p.label}</div>
+        </div>
+        <label for="chatId_${key}">شناسهٔ کانال ${p.label}</label>
+        <input type="text" id="chatId_${key}" placeholder="@your_channel یا -1001234567890" value="${escapeAttr(chatIdValues[key] || '')}">
+        <details class="help">
+          <summary>چطور ربات را به کانالم اضافه کنم؟</summary>
+          <ol>${stepsHtml}</ol>
+          ${helpNote}
+        </details>
+      </div>
+    `;
+  }).join('');
+
+  selected.forEach(key => {
+    const input = document.getElementById(`chatId_${key}`);
+    input.addEventListener('input', () => {
+      chatIdValues[key] = input.value.trim();
+      hideError('step2Error');
+    });
+  });
+}
+
+// ---------------- File picker (step 4) ----------------
 fileInput.addEventListener('change', () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -314,47 +805,135 @@ function showStatus(kind, message) {
   statusEl.textContent = message;
 }
 
+// ---------------- Promo code check (step 3) ----------------
 let promoCheckTimer = null;
+function checkPromo() {
+  return new Promise(resolve => {
+    const code = promoInput.value.trim();
+    if (!code) { promoHint.textContent = ''; promoValid = null; resolve(false); return; }
+    fetch(`${API_BASE}/promo/${encodeURIComponent(code)}/status`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.valid) {
+          promoHint.textContent = data.reason === 'expired'
+            ? 'دورهٔ آزمایشی این کد به پایان رسیده است.'
+            : 'این کد تبلیغی معتبر نیست.';
+          promoHint.style.color = 'var(--error)';
+          promoValid = false;
+        } else {
+          promoHint.textContent = data.started
+            ? `${data.days_left} روز از دورهٔ آزمایشی شما باقی مانده است.`
+            : `این کد ${data.days_left} روز اعتبار آزمایشی دارد و با اولین ارسال شروع می‌شود.`;
+          promoHint.style.color = 'var(--sage)';
+          promoValid = true;
+        }
+        resolve(promoValid);
+      })
+      .catch(() => { promoHint.textContent = ''; promoValid = null; resolve(false); });
+  });
+}
 promoInput.addEventListener('input', () => {
   clearTimeout(promoCheckTimer);
-  const code = promoInput.value.trim();
-  if (!code) { promoHint.textContent = ''; return; }
-  promoCheckTimer = setTimeout(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/promo/${encodeURIComponent(code)}/status`);
-      const data = await res.json();
-      if (!data.valid) {
-        promoHint.textContent = data.reason === 'expired'
-          ? 'دورهٔ آزمایشی این کد به پایان رسیده است.'
-          : 'این کد تبلیغی معتبر نیست.';
-        promoHint.style.color = 'var(--error)';
-      } else {
-        promoHint.textContent = data.started
-          ? `${data.days_left} روز از دورهٔ آزمایشی شما باقی مانده است.`
-          : `این کد ${data.days_left} روز اعتبار آزمایشی دارد و با اولین ارسال شروع می‌شود.`;
-        promoHint.style.color = 'var(--sage)';
-      }
-    } catch {
-      promoHint.textContent = '';
-    }
-  }, 400);
+  hideError('step3Error');
+  promoValid = null;
+  promoCheckTimer = setTimeout(checkPromo, 400);
 });
 
+// ---------------- Wizard navigation ----------------
+function showError(id) { document.getElementById(id).classList.add('visible'); }
+function hideError(id) { document.getElementById(id).classList.remove('visible'); }
+
+function updateProgress() {
+  document.querySelectorAll('.wp-item').forEach(el => {
+    const step = Number(el.dataset.step);
+    el.classList.toggle('active', step === currentStep);
+    el.classList.toggle('done', typeof currentStep === 'number' && step < currentStep);
+  });
+  document.querySelectorAll('.wp-line').forEach(el => {
+    const step = Number(el.dataset.line);
+    el.classList.toggle('done', typeof currentStep === 'number' && step < currentStep);
+  });
+}
+
+function showStep(step) {
+  currentStep = step;
+  document.querySelectorAll('.step').forEach(el => {
+    el.hidden = String(el.dataset.step) !== String(step);
+  });
+  document.getElementById('wizardProgress').hidden = step === 'success';
+  backBtn.hidden = step === 1 || step === 'success';
+  nextBtn.hidden = step === 4 || step === 'success';
+  submitBtn.hidden = step !== 4;
+  if (step !== 'success') updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function validateAndAdvance() {
+  if (currentStep === 1) {
+    if (selectedPlatforms().length === 0) { showError('step1Error'); return; }
+    hideError('step1Error');
+    renderConnectCards();
+    showStep(2);
+    return;
+  }
+
+  if (currentStep === 2) {
+    const selected = selectedPlatforms();
+    const missing = selected.some(key => !(chatIdValues[key] || '').trim());
+    if (missing) { showError('step2Error'); return; }
+    hideError('step2Error');
+    showStep(3);
+    return;
+  }
+
+  if (currentStep === 3) {
+    const code = promoInput.value.trim();
+    if (!code) { showError('step3Error'); return; }
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'در حال بررسی…';
+    const valid = promoValid === null ? await checkPromo() : promoValid;
+    nextBtn.disabled = false;
+    nextBtn.textContent = 'مرحلهٔ بعد';
+    if (!valid) { showError('step3Error'); return; }
+    hideError('step3Error');
+    renderReview();
+    showStep(4);
+    return;
+  }
+}
+
+backBtn.addEventListener('click', () => showStep(currentStep - 1));
+nextBtn.addEventListener('click', validateAndAdvance);
+
+function renderReview() {
+  const selected = selectedPlatforms();
+  const rows = selected.map(key => {
+    const p = PLATFORMS.find(pl => pl.key === key);
+    return `<div class="review-row"><span class="k">${p.label}</span><span class="v">${chatIdValues[key] || ''}</span></div>`;
+  }).join('');
+  reviewBoxEl.innerHTML = rows + `<div class="review-row"><span class="k">کد آزمایشی</span><span class="v">${promoInput.value.trim()}</span></div>`;
+}
+
+newPostBtn.addEventListener('click', () => {
+  captionEl.value = '';
+  fileInput.value = '';
+  fileDrop.classList.remove('has-file');
+  fileHint.textContent = 'برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید';
+  fileNameEl.textContent = '';
+  preview.classList.remove('visible');
+  statusEl.className = 'status';
+  showStep(4);
+});
+
+// ---------------- Submit ----------------
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (currentStep !== 4) return;
 
   const caption = captionEl.value.trim();
   const file = fileInput.files[0];
-  const promoCode = promoInput.value.trim();
-  const destinations = {};
-  for (const id of destinationIds) {
-    destinations[id] = document.getElementById(id).value.trim();
-  }
-  const hasDestination = Object.values(destinations).some(v => v);
 
-  if (!promoCode) { showStatus('error', 'کد تبلیغی را وارد کنید.'); return; }
   if (!caption && !file) { showStatus('error', 'متن یا فایل رسانه لازم است.'); return; }
-  if (!hasDestination) { showStatus('error', 'حداقل یک مقصد را وارد کنید.'); return; }
 
   submitBtn.disabled = true;
   showStatus('info', 'در حال ارسال…');
@@ -362,30 +941,28 @@ form.addEventListener('submit', async (e) => {
   try {
     const formData = new FormData();
     formData.set('caption', caption);
-    formData.set('promo_code', promoCode);
-    formData.set('telegram_chat_id', destinations.telegramChatId);
-    formData.set('bale_chat_id', destinations.baleChatId);
-    formData.set('rubika_chat_id', destinations.rubikaChatId);
-    formData.set('eitaa_chat_id', destinations.eitaaChatId);
+    formData.set('promo_code', promoInput.value.trim());
+    PLATFORMS.forEach(p => {
+      formData.set(p.formKey, chatIdValues[p.key] || '');
+    });
     if (file) formData.set('media', file);
 
     const response = await fetch(`${API_BASE}/submit`, { method: 'POST', body: formData });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
 
-    showStatus('success', result.message || 'پست ثبت شد.');
-    form.reset();
-    fileDrop.classList.remove('has-file');
-    fileHint.textContent = 'برای انتخاب فایل کلیک کنید، یا بکشید و رها کنید';
-    fileNameEl.textContent = '';
-    preview.classList.remove('visible');
-    promoHint.textContent = '';
+    savePrefs();
+    document.getElementById('successMessage').textContent =
+      result.message || 'ظرف حداکثر ۱۰ دقیقه به کانال‌های انتخابی شما ارسال می‌شود.';
+    showStep('success');
   } catch (err) {
     showStatus('error', `خطا در ارسال: ${err.message}`);
   } finally {
     submitBtn.disabled = false;
   }
 });
+
+showStep(1);
 </script>
 </body>
 </html>

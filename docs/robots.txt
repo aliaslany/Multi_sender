@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aliaslany.github.io/Multi_sender/sitemap.xml
