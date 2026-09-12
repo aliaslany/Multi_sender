@@ -30,7 +30,7 @@ jobs:
         run: echo "SEARCH_CONDITIONS is set:" && [ -n "$SEARCH_CONDITIONS" ] && echo "yes" || echo "NO - EMPTY"
       - name: Run bot
         env:
-          SOURCE_TYPE: ${{ secrets.SOURCE_TYPE }}
+          SOURCE_TYPE: ${{ secrets.SOURCE_TYPE || 'website' }}
           SEARCH_CITY_IDS: ${{ secrets.SEARCH_CITY_IDS }}   # <-- تغییر از SEARCH_CITY_ID
           SEARCH_CATEGORY: ${{ secrets.SEARCH_CATEGORY }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -38,8 +38,8 @@ jobs:
           TELEGRAM_RELAY_CHAT_IDS: ${{ secrets.TELEGRAM_RELAY_CHAT_IDS }}
           WEBSITE_API_URL: ${{ secrets.WEBSITE_API_URL }}
           WEBSITE_API_TOKEN: ${{ secrets.WEBSITE_API_TOKEN }}
-          CHANNEL_LINK_LABEL: ${{ secrets.CHANNEL_LINK_LABEL }}
-          TELEGRAM_CHANNEL_URL: ${{ secrets.TELEGRAM_CHANNEL_URL }}
+          CHANNEL_LINK_LABEL: ${{ secrets.CHANNEL_LINK_LABEL || 'دیوار ادز اسیست' }}
+          TELEGRAM_CHANNEL_URL: ${{ secrets.TELEGRAM_CHANNEL_URL || 'https://t.me/divaradsassist' }}
           BALE_CHANNEL_URL: ${{ secrets.BALE_CHANNEL_URL }}
           RUBIKA_CHANNEL_URL: ${{ secrets.RUBIKA_CHANNEL_URL }}
           BALE_BOT_TOKEN: ${{ secrets.BALE_BOT_TOKEN }}
