@@ -10,11 +10,19 @@ always goes to every configured sender), a website submission specifies
 its own destinations per item - Item.destination_overrides restricts
 delivery to just the platforms the customer filled in, using the chat id
 they gave rather than your own default channel.
+
+This is a general-purpose app, not a nature-content channel, so the
+nature-quote + channel-links extras are opt-in per submission (the
+"add_extras" checkbox on the form) rather than automatic - by default a
+post's text is exactly what the customer wrote, nothing appended. The one
+thing that's always added, opted in or not, is a "multiSender" attribution
+link back to @Divarassist, since every post here went out through a
+promo code.
 """
 import requests
 
 import config
-from core.models import Item, Media
+from core.models import ChannelLink, Item, Media
 from sources.base import Source
 from sources.common.channel_links import cross_promotion_links
 from sources.common.quotes import random_nature_quote
@@ -25,6 +33,10 @@ _DESTINATION_KEY_TO_SENDER = {
     "rubika_chat_id": "rubika",
     "eitaa_chat_id": "eitaa",
 }
+
+# Required attribution on every post sent through a promo code, regardless
+# of whether the customer opted into the nature-quote/channel-links extras.
+_BRAND_LINK = ChannelLink(label="multiSender", url="https://t.me/Divarassist")
 
 
 class WebsiteSource(Source):
@@ -84,15 +96,19 @@ class WebsiteSource(Source):
             print("website: submission {} has no destinations, skipping.".format(item_id))
             return None
 
-        quote = random_nature_quote()
+        quote = random_nature_quote() if submission.get("add_extras") else None
         if quote:
             caption = "{}\n\n{}".format(caption, quote) if caption else quote
+
+        channel_links = [_BRAND_LINK]
+        if submission.get("add_extras"):
+            channel_links = cross_promotion_links() + channel_links
 
         return Item(
             id=item_id,
             raw_text=caption,
             media=media,
-            channel_links=cross_promotion_links(),
+            channel_links=channel_links,
             destination_overrides=overrides,
             source=self.name,
         )

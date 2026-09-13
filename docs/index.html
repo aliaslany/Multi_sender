@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>دیوار ادز اسیست | ارسال خودکار آگهی به تلگرام، بله، روبیکا و ایتا</title>
+<title>MultiSender | ارسال خودکار پست به تلگرام، بله، روبیکا و ایتا</title>
 <meta name="description" content="یک پست را یک‌بار بفرستید تا خودکار در تلگرام، بله، روبیکا و ایتا منتشر شود. کد آزمایشی رایگان بگیرید و همین حالا امتحان کنید.">
 <link rel="canonical" href="https://aliaslany.github.io/Multi_sender/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fa_IR">
-<meta property="og:title" content="دیوار ادز اسیست | پخش همزمان پست در چند پیام‌رسان">
+<meta property="og:title" content="MultiSender | پخش همزمان پست در چند پیام‌رسان">
 <meta property="og:description" content="یک پست را یک‌بار بفرستید تا خودکار در تلگرام، بله، روبیکا و ایتا منتشر شود. کد آزمایشی رایگان بگیرید و همین حالا امتحان کنید.">
 <meta property="og:url" content="https://aliaslany.github.io/Multi_sender/">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="دیوار ادز اسیست">
+<meta name="twitter:title" content="MultiSender">
 <meta name="twitter:description" content="پخش همزمان یک پست در تلگرام، بله، روبیکا و ایتا — با کد آزمایشی رایگان.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23101a14'/%3E%3Cpath d='M22 2 11 13' stroke='%23e0c15c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M22 2 15 22l-4-9-9-4Z' stroke='%23e0c15c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "دیوار ادز اسیست",
+  "name": "MultiSender",
   "url": "https://aliaslany.github.io/Multi_sender/",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web",
@@ -260,6 +260,20 @@
   .file-drop .hint { color: var(--text-dim); font-size: 13px; }
   .file-drop .filename { color: var(--amber-soft); font-size: 14px; margin-top: 4px; word-break: break-all; }
 
+  .extras-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-1);
+    font-size: 14px;
+  }
+  .extras-toggle input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--sage); }
+  .extras-toggle span { color: var(--text); }
+
   .preview {
     margin-top: 12px;
     max-width: 100%;
@@ -456,7 +470,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow"><span class="dot"></span> دیوار ادز اسیست</div>
+  <div class="eyebrow"><span class="dot"></span> MultiSender</div>
   <h1>ارسال پست جدید</h1>
   <p class="sub">یک عکس یا ویدیو با متن دلخواه بفرستید — به‌طور خودکار در اجرای بعدی ربات (حداکثر تا ۱۰ دقیقه دیگر) به کانال‌هایی که مشخص می‌کنید ارسال می‌شود.</p>
 
@@ -552,6 +566,12 @@
         <label for="caption">متن پست</label>
         <textarea id="caption" placeholder="غروبِ یکی از روزای خیلی گرم تابستون…"></textarea>
       </div>
+
+      <label class="extras-toggle">
+        <input type="checkbox" id="addExtras">
+        <span>افزودن نقل‌قول طبیعت و لینک تبلیغاتی به انتهای پست</span>
+      </label>
+      <div class="hint" style="margin:-8px 0 4px;">اگر موضوع پست شما مرتبط با طبیعت نیست، این گزینه را خاموش نگه دارید — پیش‌فرض، متن پست دقیقاً همان چیزی است که اینجا می‌نویسید.</div>
 
       <div>
         <label>عکس یا ویدیو (اختیاری)</label>
@@ -675,6 +695,7 @@ const platformListEl = document.getElementById('platformList');
 const connectCardsEl = document.getElementById('connectCards');
 const reviewBoxEl = document.getElementById('reviewBox');
 const captionEl = document.getElementById('caption');
+const addExtrasEl = document.getElementById('addExtras');
 const fileInput = document.getElementById('mediaFile');
 const fileDrop = document.getElementById('fileDrop');
 const fileHint = document.getElementById('fileHint');
@@ -941,6 +962,7 @@ form.addEventListener('submit', async (e) => {
   try {
     const formData = new FormData();
     formData.set('caption', caption);
+    formData.set('add_extras', addExtrasEl.checked ? 'true' : 'false');
     formData.set('promo_code', promoInput.value.trim());
     PLATFORMS.forEach(p => {
       formData.set(p.formKey, chatIdValues[p.key] || '');

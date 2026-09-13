@@ -20,7 +20,7 @@
  *
  * Storage: everything lives in one KV namespace.
  *   promo:<code>      -> { trial_days, first_used_at }
- *   submission:<id>   -> { caption, media_base64, media_type, media_content_type,
+ *   submission:<id>   -> { caption, add_extras, media_base64, media_type, media_content_type,
  *                          destinations: {telegram_chat_id, bale_chat_id,
  *                          rubika_chat_id, eitaa_chat_id}, promo_code, created_at }
  */
@@ -84,6 +84,7 @@ async function handleSubmit(request, env, origin) {
   const form = await request.formData();
   const promoCode = (form.get("promo_code") || "").toString().trim();
   const caption = (form.get("caption") || "").toString().trim();
+  const addExtras = (form.get("add_extras") || "").toString().trim() === "true";
   const destinations = {
     telegram_chat_id: (form.get("telegram_chat_id") || "").toString().trim(),
     bale_chat_id: (form.get("bale_chat_id") || "").toString().trim(),
@@ -132,6 +133,7 @@ async function handleSubmit(request, env, origin) {
   const id = `sub_${now}_${Math.random().toString(36).slice(2, 10)}`;
   const submission = {
     caption,
+    add_extras: addExtras,
     media_base64: mediaBase64,
     media_type: mediaType,
     media_content_type: mediaContentType,
