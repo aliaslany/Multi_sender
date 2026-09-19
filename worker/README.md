@@ -71,11 +71,56 @@ ever change `RUBIKA_WEBHOOK_SECRET`). The reply text and links are in
 `GREETING_TEXT` near the top of `src/index.js` - edit and redeploy to
 change the wording.
 
-**Why not Telegram or Bale too?** Telegram's Bot API only lets a bot use
-either a webhook or polling, never both at once - and the Telegram bot
-already polls via `telegram_relay`, so adding a webhook here would break
-that. Bale has no such conflict and could get the same treatment later if
-it turns out to matter there too.
+**Why not the sender bot on Telegram too?** Telegram's Bot API only lets a
+bot use either a webhook or polling, never both at once - and the sender
+bot already polls via `telegram_relay`, so pointing a webhook at *that*
+token would break it. A second bot has no such conflict, which is exactly
+what the next section uses. Bale has no conflict either and could get the
+same treatment later if it turns out to matter there.
+
+## Telegram Business auto-responder (rule-based, no AI)
+
+Telegram Premium's **Chat Automation** (Settings → Telegram Business → Chat
+Automation) lets you attach a bot to your personal account. It then sees
+your DMs and can answer **as you**. This Worker answers the questions
+customers keep repeating - trial codes, price, how to post, which
+messengers - and says nothing to anything else, so you still answer the
+real questions yourself and the bot can never invent a term you didn't
+offer.
+
+It is deliberately keyword-based, not AI: no API key, no cost, and no
+chance of it making up a price.
+
+Use a **separate bot** from the one in `BOT_TOKEN` (the sender bot polls
+`getUpdates`; a webhook on the same token returns `409 Conflict`). Then:
+
+```bash
+wrangler secret put SUPPORT_BOT_TOKEN        # the support bot's token from @BotFather
+wrangler secret put TELEGRAM_WEBHOOK_SECRET  # any long random string you make up
+wrangler deploy
+
+curl -X POST https://<your-worker-url>/admin/register-telegram-webhook \
+  -H "Authorization: Bearer <your ADMIN_TOKEN>"
+```
+
+Then attach that bot under Chat Automation and leave its **reply
+permission on** - without it Telegram sends the messages here but refuses
+to let the bot answer.
+
+Two things worth knowing:
+
+- `business_message` updates are **never delivered unless asked for by
+  name**, which is what the `allowed_updates` in
+  `handleRegisterTelegramWebhook` does. A plain `setWebhook` gets you
+  nothing.
+- The messages *you* send in those chats arrive as `business_message` too.
+  They're dropped by comparing the sender against the connection's
+  `owner_id`, otherwise the bot would answer you.
+
+To change what it says, edit `AUTO_REPLY_RULES` (and `BUSINESS_GREETING`)
+in `src/index.js` and redeploy. First matching rule wins, short keywords
+match whole words and longer ones match substrings, and an unmatched
+message gets the greeting once per chat per 30 days - then silence.
 
 ## Updating the Worker later
 

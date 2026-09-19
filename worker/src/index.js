@@ -19,6 +19,8 @@
  *   POST /promo                             create/update a promo code's trial window
  *   POST /admin/register-rubika-webhook     one-time: point Rubika's servers at
  *                                            /webhook/rubika/<RUBIKA_WEBHOOK_SECRET>
+ *   POST /admin/register-telegram-webhook    one-time: setWebhook for the support
+ *                                            bot, asking for business_* updates
  *
  * Rubika webhook (called by Rubika's servers, not a browser or the bot):
  *   POST /webhook/rubika/:secret   replies with a link to this site whenever
@@ -28,8 +30,17 @@
  *                                   must match RUBIKA_WEBHOOK_SECRET so a random
  *                                   POST can't make the bot send messages.
  *
+ * Telegram Business webhook (called by Telegram's servers):
+ *   POST /webhook/telegram         rule-based auto-replies in your own DMs, sent
+ *                                   as you, for the support bot attached to your
+ *                                   profile's Chat Automation. Authenticated by
+ *                                   the X-Telegram-Bot-Api-Secret-Token header
+ *                                   (must equal TELEGRAM_WEBHOOK_SECRET).
+ *
  * Storage: everything lives in one KV namespace.
  *   promo:<code>      -> { trial_days, first_used_at }
+ *   bizconn:<id>      -> { owner_id, can_reply } for a Telegram Business connection
+ *   bizauto:<chat_id> -> "1" once the auto-responder has spoken in that chat
  *   submission:<id>   -> { caption, add_extras, media_base64, media_type, media_content_type,
  *                          destinations: {telegram_chat_id, bale_chat_id,
  *                          rubika_chat_id, eitaa_chat_id}, promo_code, created_at }
@@ -212,6 +223,15 @@ const GREETING_TEXT =
   "\n\nاگر کد آزمایشی ندارید، از پشتیبانی بگیرید: " +
   SUPPORT_URL;
 
+async function telegramApi(token, method, payload) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return response.json().catch(() => null);
+}
+
 async function rubikaApi(token, method, payload) {
   const response = await fetch(`https://botapi.rubika.ir/v3/${token}/${method}`, {
     method: "POST",
@@ -254,6 +274,193 @@ async function handleRegisterRubikaWebhook(request, env) {
   const webhookUrl = `${url.origin}/webhook/rubika/${env.RUBIKA_WEBHOOK_SECRET}`;
   const result = await rubikaApi(env.RUBIKA_BOT_TOKEN, "updateBotEndpoints", { url: webhookUrl, type: "ReceiveUpdate" });
   return json({ ok: true, webhookUrl, rubikaResponse: result });
+}
+
+// ---------------------------------------------------------------------------
+// Telegram Business ("Chat Automation") auto-responder.
+//
+// Telegram Premium lets you attach a bot to your personal account, which then
+// sees your DMs and can answer *as you*. This one is deliberately rule-based,
+// not AI: it answers the handful of questions customers keep asking and stays
+// silent on everything else, so it can never invent a price or a trial term.
+// Edit AUTO_REPLY_RULES below to change what it says.
+// ---------------------------------------------------------------------------
+
+const BUSINESS_GREETING =
+  "سلام! 👋 ممنون که پیام دادید.\n" +
+  "این یک پاسخ خودکار است؛ خودم هم به‌زودی جواب می‌دهم.\n\n" +
+  "MultiSender یک پست را هم‌زمان به تلگرام، بله، روبیکا و ایتا می‌فرستد:\n" +
+  SITE_URL +
+  "\n\nبرای کد آزمایشی رایگان کافی است بنویسید «کد».";
+
+// First matching rule wins, so the more specific ones come first.
+const AUTO_REPLY_RULES = [
+  {
+    keywords: ["مشکل", "خطا", "ارور", "کار نمیکنه", "کار نمی کنه", "ارسال نشد", "نمیره", "نمی ره"],
+    reply:
+      "متوجه شدم مشکلی پیش آمده 🙏\n" +
+      "لطفاً بنویسید دقیقاً در کدام مرحله بوده و اگر می‌شود یک اسکرین‌شات بفرستید.\n" +
+      "خودم بررسی می‌کنم و همین‌جا جواب می‌دهم.",
+  },
+  {
+    keywords: ["کد", "کد ازمایشی", "کد تست", "رایگان", "ازمایشی", "promo", "code"],
+    reply:
+      "برای گرفتن کد آزمایشی رایگان همین‌جا بنویسید «کد می‌خواهم» — کد را می‌سازم و برایتان می‌فرستم.\n\n" +
+      "کد را در فرم ثبت پست وارد می‌کنید:\n" +
+      SITE_URL +
+      "\n\nشمارش روزهای آزمایشی از اولین ارسال شما شروع می‌شود، نه از لحظه‌ای که کد ساخته می‌شود.",
+  },
+  {
+    keywords: ["قیمت", "هزینه", "تعرفه", "اشتراک", "پرداخت", "تمدید"],
+    reply:
+      "دورهٔ آزمایشی رایگان است و از اولین ارسال شما شروع می‌شود.\n" +
+      "برای ادامهٔ کار بعد از دورهٔ آزمایشی همین‌جا بنویسید تا شرایط را برایتان بفرستم.",
+  },
+  {
+    keywords: ["راهنما", "چطور", "چگونه", "اموزش", "شروع", "start", "ثبت پست", "ارسال پست"],
+    reply:
+      "راهنمای قدم‌به‌قدم:\n" +
+      "۱) کد آزمایشی بگیرید (بنویسید «کد»).\n" +
+      "۲) به این صفحه بروید: " +
+      SITE_URL +
+      "\n۳) متن و عکس یا ویدیوی پست را بگذارید.\n" +
+      "۴) آیدی کانال‌های مقصد را وارد کنید.\n" +
+      "۵) ثبت کنید — پست حداکثر تا ۱۰ دقیقه در همهٔ کانال‌ها منتشر می‌شود.",
+  },
+  {
+    keywords: ["پلتفرم", "پیام رسان", "روبیکا", "ایتا", "تلگرام", "کانال", "شبکه"],
+    reply:
+      "پست شما هم‌زمان به چهار پیام‌رسان می‌رود: تلگرام، بله، روبیکا و ایتا.\n" +
+      "فقط باید ربات را در هر کانال مقصد ادمین کنید تا بتواند پست بگذارد.",
+  },
+  {
+    keywords: ["سلام", "درود", "وقت بخیر", "hi", "hello"],
+    reply: BUSINESS_GREETING,
+  },
+];
+
+// Persian text arrives in several equivalent spellings (Arabic ي/ك, ZWNJ,
+// آ/أ), so both sides of a comparison get flattened to one of them first.
+// Punctuation and emoji become spaces, which is also what makes whole-word
+// matching below possible.
+function normalizeFa(text) {
+  return text
+    .toLowerCase()
+    .replace(/[يى]/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/[آأإ]/g, "ا")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function matchAutoReply(text) {
+  const haystack = normalizeFa(text || "");
+  if (!haystack) return null;
+  const words = haystack.split(" ");
+
+  for (const rule of AUTO_REPLY_RULES) {
+    const hit = rule.keywords.some((raw) => {
+      const keyword = normalizeFa(raw);
+      // A short keyword like "کد" would fire inside unrelated words ("کدام"),
+      // so it has to match a whole word. Longer ones match as substrings, which
+      // is what lets attached suffixes ("قیمتش", "مشکلم") still hit.
+      return keyword.length >= 4 || keyword.includes(" ")
+        ? haystack.includes(keyword)
+        : words.includes(keyword);
+    });
+    if (hit) return rule.reply;
+  }
+  return null;
+}
+
+async function storeBusinessConnection(connection, env) {
+  const key = `bizconn:${connection.id}`;
+  if (!connection.is_enabled) {
+    await env.MULTI_SENDER_KV.delete(key);
+    return;
+  }
+  // can_reply moved into a rights object in newer Bot API versions.
+  const canReply = connection.rights
+    ? Boolean(connection.rights.can_reply)
+    : Boolean(connection.can_reply);
+  await env.MULTI_SENDER_KV.put(
+    key,
+    JSON.stringify({ owner_id: connection.user && connection.user.id, can_reply: canReply }),
+  );
+}
+
+async function handleBusinessMessage(msg, env) {
+  if (!env.SUPPORT_BOT_TOKEN) return;
+
+  const raw = await env.MULTI_SENDER_KV.get(`bizconn:${msg.business_connection_id}`);
+  const connection = raw ? JSON.parse(raw) : null;
+  if (!connection || !connection.can_reply) return;
+
+  // business_message also carries the messages *you* send - never answer those.
+  if (msg.from && msg.from.id === connection.owner_id) return;
+  if (!msg.chat || msg.chat.type !== "private") return;
+
+  const reply = matchAutoReply(msg.text || msg.caption || "");
+  const seenKey = `bizauto:${msg.chat.id}`;
+
+  if (!reply) {
+    // Nothing matched. Greet a first-time contact so they aren't left staring
+    // at silence, then stay out of the way: you answer the rest yourself, and
+    // a bot talking over you is worse than a bot saying nothing.
+    if (await env.MULTI_SENDER_KV.get(seenKey)) return;
+    await sendBusinessReply(env, msg, BUSINESS_GREETING);
+  } else {
+    await sendBusinessReply(env, msg, reply);
+  }
+  await env.MULTI_SENDER_KV.put(seenKey, "1", { expirationTtl: 60 * 60 * 24 * 30 });
+}
+
+function sendBusinessReply(env, msg, text) {
+  return telegramApi(env.SUPPORT_BOT_TOKEN, "sendMessage", {
+    business_connection_id: msg.business_connection_id,
+    chat_id: msg.chat.id,
+    text,
+    link_preview_options: { is_disabled: true },
+  });
+}
+
+async function handleTelegramWebhook(request, env) {
+  if (
+    !env.TELEGRAM_WEBHOOK_SECRET ||
+    request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.TELEGRAM_WEBHOOK_SECRET
+  ) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  let update;
+  try {
+    update = await request.json();
+  } catch {
+    return json({ ok: true }); // ignore malformed bodies rather than error-loop Telegram's retries
+  }
+
+  if (update.business_connection) {
+    await storeBusinessConnection(update.business_connection, env);
+  } else if (update.business_message) {
+    await handleBusinessMessage(update.business_message, env);
+  }
+
+  return json({ ok: true });
+}
+
+async function handleRegisterTelegramWebhook(request, env) {
+  if (!env.SUPPORT_BOT_TOKEN || !env.TELEGRAM_WEBHOOK_SECRET) {
+    return json({ error: "SUPPORT_BOT_TOKEN and TELEGRAM_WEBHOOK_SECRET must both be set as Worker secrets first" }, 400);
+  }
+  const url = new URL(request.url);
+  const webhookUrl = `${url.origin}/webhook/telegram`;
+  const result = await telegramApi(env.SUPPORT_BOT_TOKEN, "setWebhook", {
+    url: webhookUrl,
+    secret_token: env.TELEGRAM_WEBHOOK_SECRET,
+    // business_* updates are never delivered unless they are asked for by name.
+    allowed_updates: ["business_connection", "business_message"],
+  });
+  return json({ ok: true, webhookUrl, telegramResponse: result });
 }
 
 export default {
@@ -301,6 +508,15 @@ export default {
     if (request.method === "POST" && url.pathname === "/admin/register-rubika-webhook") {
       if (!requireBearer(request, env.ADMIN_TOKEN)) return unauthorized();
       return handleRegisterRubikaWebhook(request, env);
+    }
+
+    if (request.method === "POST" && url.pathname === "/admin/register-telegram-webhook") {
+      if (!requireBearer(request, env.ADMIN_TOKEN)) return unauthorized();
+      return handleRegisterTelegramWebhook(request, env);
+    }
+
+    if (request.method === "POST" && url.pathname === "/webhook/telegram") {
+      return handleTelegramWebhook(request, env);
     }
 
     const rubikaWebhookMatch = url.pathname.match(/^\/webhook\/rubika\/([^/]+)$/);
