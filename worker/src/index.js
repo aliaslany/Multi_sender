@@ -16,7 +16,17 @@
  *   DELETE /submission/:id     called once delivery to every sender succeeds
  *
  * Admin (Authorization: Bearer <ADMIN_TOKEN> - only you):
- *   POST /promo                create/update a promo code's trial window
+ *   POST /promo                             create/update a promo code's trial window
+ *   POST /admin/register-rubika-webhook     one-time: point Rubika's servers at
+ *                                            /webhook/rubika/<RUBIKA_WEBHOOK_SECRET>
+ *
+ * Rubika webhook (called by Rubika's servers, not a browser or the bot):
+ *   POST /webhook/rubika/:secret   replies with a link to this site whenever
+ *                                   someone starts or messages the Rubika bot
+ *                                   directly - closes the "found the bot, no
+ *                                   idea where to actually sign up" gap. :secret
+ *                                   must match RUBIKA_WEBHOOK_SECRET so a random
+ *                                   POST can't make the bot send messages.
  *
  * Storage: everything lives in one KV namespace.
  *   promo:<code>      -> { trial_days, first_used_at }
@@ -193,6 +203,59 @@ async function handleCreatePromo(request, env) {
   return json({ ok: true, code, trial_days: trialDays });
 }
 
+const SITE_URL = "https://aliaslany.github.io/Multi_sender/";
+const SUPPORT_URL = "https://t.me/Divarassist";
+const GREETING_TEXT =
+  "سلام! 👋 این‌جا ربات ارسال‌کنندهٔ MultiSender است.\n\n" +
+  "برای اتصال رایگان و آزمایشیِ چند روزه و ارسال خودکار یک پست به تلگرام، بله، روبیکا و ایتا، از لینک زیر استفاده کنید:\n" +
+  SITE_URL +
+  "\n\nاگر کد آزمایشی ندارید، از پشتیبانی بگیرید: " +
+  SUPPORT_URL;
+
+async function rubikaApi(token, method, payload) {
+  const response = await fetch(`https://botapi.rubika.ir/v3/${token}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return response.json().catch(() => null);
+}
+
+async function handleRubikaWebhook(request, env, secret) {
+  if (!env.RUBIKA_WEBHOOK_SECRET || secret !== env.RUBIKA_WEBHOOK_SECRET) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: true }); // ignore malformed bodies rather than error-loop Rubika's retries
+  }
+
+  const update = body.update;
+  const chatId = update && update.chat_id;
+  const type = update && update.type;
+  const isGreetableEvent =
+    type === "StartedBot" || (type === "NewMessage" && update.new_message && update.new_message.sender_type === "User");
+
+  if (chatId && isGreetableEvent && env.RUBIKA_BOT_TOKEN) {
+    await rubikaApi(env.RUBIKA_BOT_TOKEN, "sendMessage", { chat_id: chatId, text: GREETING_TEXT });
+  }
+
+  return json({ ok: true });
+}
+
+async function handleRegisterRubikaWebhook(request, env) {
+  if (!env.RUBIKA_BOT_TOKEN || !env.RUBIKA_WEBHOOK_SECRET) {
+    return json({ error: "RUBIKA_BOT_TOKEN and RUBIKA_WEBHOOK_SECRET must both be set as Worker secrets first" }, 400);
+  }
+  const url = new URL(request.url);
+  const webhookUrl = `${url.origin}/webhook/rubika/${env.RUBIKA_WEBHOOK_SECRET}`;
+  const result = await rubikaApi(env.RUBIKA_BOT_TOKEN, "updateBotEndpoints", { url: webhookUrl, type: "ReceiveUpdate" });
+  return json({ ok: true, webhookUrl, rubikaResponse: result });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -234,6 +297,15 @@ export default {
     if (request.method === "POST" && url.pathname === "/promo") {
       if (!requireBearer(request, env.ADMIN_TOKEN)) return unauthorized();
       return handleCreatePromo(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/admin/register-rubika-webhook") {
+      if (!requireBearer(request, env.ADMIN_TOKEN)) return unauthorized();
+      return handleRegisterRubikaWebhook(request, env);
+    }
+
+    const rubikaWebhookMatch = url.pathname.match(/^\/webhook\/rubika\/([^/]+)$/);
+    if (request.method === "POST" && rubikaWebhookMatch) {
+      return handleRubikaWebhook(request, env, rubikaWebhookMatch[1]);
     }
 
     return json({ error: "not_found" }, 404);

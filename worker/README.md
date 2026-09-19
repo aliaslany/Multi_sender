@@ -46,6 +46,37 @@ thing they need to enter besides their own channel's chat id. There's no
 way to look up or list existing codes yet; keep a note of what you create
 if that matters to you.
 
+## Rubika auto-reply ("someone found the bot, now what?")
+
+If someone finds your Rubika bot directly (search, a shared link, whatever)
+and messages it or taps start, the bot used to say nothing at all — a real
+dead end for a curious potential customer. This makes it reply instantly
+with a link to the site and to support, via a webhook (Rubika supports
+webhooks, not just polling, so this is instant - no cron delay).
+
+Set these two additional secrets, then register the webhook once:
+
+```bash
+wrangler secret put RUBIKA_BOT_TOKEN        # same token as your RUBIKA_BOT_TOKEN repo secret
+wrangler secret put RUBIKA_WEBHOOK_SECRET   # any long random string you make up - not shared anywhere
+wrangler deploy
+
+curl -X POST https://<your-worker-url>/admin/register-rubika-webhook \
+  -H "Authorization: Bearer <your ADMIN_TOKEN>"
+```
+
+That last call tells Rubika's servers to POST here whenever your bot gets
+a message or a "start" - it only needs to be run once (re-run it if you
+ever change `RUBIKA_WEBHOOK_SECRET`). The reply text and links are in
+`GREETING_TEXT` near the top of `src/index.js` - edit and redeploy to
+change the wording.
+
+**Why not Telegram or Bale too?** Telegram's Bot API only lets a bot use
+either a webhook or polling, never both at once - and the Telegram bot
+already polls via `telegram_relay`, so adding a webhook here would break
+that. Bale has no such conflict and could get the same treatment later if
+it turns out to matter there too.
+
 ## Updating the Worker later
 
 Edit `src/index.js`, then just run `wrangler deploy` again from this
