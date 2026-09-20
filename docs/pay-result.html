@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>نتیجهٔ پرداخت | MultiSender</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23101a14'/%3E%3Cpath d='M22 2 11 13' stroke='%23e0c15c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M22 2 15 22l-4-9-9-4Z' stroke='%23e0c15c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="dot"></span> MultiSender</a>
+    <nav aria-label="منوی اصلی">
+      <a href="index.html">ارسال پست</a>
+      <a href="pricing.html">تعرفه</a>
+      <a href="about.html">دربارهٔ ما</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>نتیجهٔ پرداخت</h1>
+
+    <div id="pending" class="card"><p style="margin:0">در حال بررسی پرداخت شما…</p></div>
+
+    <div id="paid" hidden>
+      <div class="notice ok">پرداخت با موفقیت انجام شد. کد اعتبار شما این است:</div>
+      <div class="code-box" id="code"></div>
+      <p class="muted" id="paidDetails"></p>
+      <p><strong>این کد را جایی یادداشت کنید</strong>؛ بعداً دوباره نمایش داده نمی‌شود. با دکمهٔ زیر مستقیم وارد فرم ارسال پست می‌شوید و کد از قبل وارد شده است.</p>
+      <p>
+        <a class="btn" id="useCode" href="index.html">شروع ارسال پست</a>
+        <button type="button" class="btn secondary" id="copyCode">کپی کد</button>
+      </p>
+    </div>
+
+    <div id="failed" hidden>
+      <div class="notice error">پرداخت انجام نشد یا تأیید نشد. اگر مبلغی از حساب شما کسر شده، معمولاً ظرف چند ساعت برگشت می‌خورد؛ در صورت نیاز به پشتیبانی پیام بدهید.</div>
+      <p><a class="btn" href="pricing.html">بازگشت به تعرفه</a> <a class="btn secondary" id="supportLink" href="#" rel="noopener">پیام به پشتیبانی</a></p>
+    </div>
+
+    <div id="notfound" hidden>
+      <div class="notice error">این سفارش پیدا نشد یا منقضی شده است.</div>
+      <p><a class="btn" href="pricing.html">بازگشت به تعرفه</a></p>
+    </div>
+  </main>
+</div>
+<script src="config.js"></script>
+<script>
+(function () {
+  const { API_BASE, SUPPORT_URL } = window.MULTISENDER;
+  const fa = new Intl.NumberFormat('fa-IR');
+  const orderId = new URLSearchParams(location.search).get('order') || '';
+  const sections = ['pending', 'paid', 'failed', 'notfound'];
+  document.getElementById('supportLink').href = SUPPORT_URL;
+
+  function show(name) {
+    sections.forEach((id) => { document.getElementById(id).hidden = id !== name; });
+  }
+
+  function showPaid(order) {
+    document.getElementById('code').textContent = order.code;
+    document.getElementById('paidDetails').textContent =
+      `${order.plan_title}: ${fa.format(order.posts)} پست، ${order.valid_days === 365 ? 'یک سال' : fa.format(order.valid_days) + ' روز'} اعتبار از اولین استفاده.`;
+    document.getElementById('useCode').href = `index.html?code=${encodeURIComponent(order.code)}`;
+    document.getElementById('copyCode').addEventListener('click', async (event) => {
+      try {
+        await navigator.clipboard.writeText(order.code);
+        event.target.textContent = 'کپی شد';
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(document.getElementById('code'));
+        getSelection().removeAllRanges();
+        getSelection().addRange(range);
+      }
+    });
+    show('paid');
+  }
+
+  async function load(attempt) {
+    if (!/^[a-f0-9]{24}$/.test(orderId)) return show('notfound');
+    try {
+      const response = await fetch(`${API_BASE}/order/${orderId}`);
+      if (response.status === 404) return show('notfound');
+      const order = await response.json();
+      if (order.status === 'paid') return showPaid(order);
+      if (order.status === 'failed') return show('failed');
+      // Still pending: the gateway redirect can beat our verification by a moment.
+      if (attempt < 5) return setTimeout(() => load(attempt + 1), 2000);
+      show('failed');
+    } catch {
+      if (attempt < 5) return setTimeout(() => load(attempt + 1), 2000);
+      show('failed');
+    }
+  }
+
+  load(0);
+})();
+</script>
+</body>
+</html>
