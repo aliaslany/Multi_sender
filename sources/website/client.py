@@ -15,10 +15,14 @@ This is a general-purpose app, not a nature-content channel, so the
 nature-quote + channel-links extras are opt-in per submission (the
 "add_extras" checkbox on the form) rather than automatic - by default a
 post's text is exactly what the customer wrote, nothing appended. The one
-thing that's always added, opted in or not, is a "multiSender" attribution
-link back to @Divarassist, since every post here went out through a
-promo code.
+thing that's always added, opted in or not, is a MultiSender attribution
+link, since every post here went out through a promo code. That link is the
+product's main distribution channel, so it goes through the Worker's /r/
+redirect: it counts clicks per wording, and carries the customer's public
+referral id so a friend who signs up through it can reward them.
 """
+import zlib
+
 import requests
 
 import config
@@ -34,9 +38,27 @@ _DESTINATION_KEY_TO_SENDER = {
     "eitaa_chat_id": "eitaa",
 }
 
-# Required attribution on every post sent through a promo code, regardless
-# of whether the customer opted into the nature-quote/channel-links extras.
-_BRAND_LINK = ChannelLink(label="multiSender", url="https://t.me/Divarassist")
+# Wording variants for the required attribution link. The Worker's funnel
+# stats (GET /admin/stats) are keyed by the id, not the text, so when you
+# rewrite a label give it a NEW id - reusing one averages old and new copy.
+_ATTRIBUTION_VARIANTS = [
+    ("1", "ارسال‌شده با MultiSender"),
+    ("2", "⚡ یک پست، چهار پیام‌رسان — MultiSender"),
+    ("3", "پست‌تان را همزمان در تلگرام، بله، روبیکا و ایتا بفرستید"),
+    ("4", "کد آزمایشی رایگان MultiSender را امتحان کنید"),
+]
+
+
+def _brand_link(item_id: str, ref_code: str | None) -> ChannelLink:
+    """Required attribution on every post sent through a promo code, regardless
+    of whether the customer opted into the nature-quote/channel-links extras.
+    The variant is a pure function of the submission id, so a post retried on
+    a platform that failed earlier shows the same wording as the others."""
+    variant_id, label = _ATTRIBUTION_VARIANTS[zlib.crc32(item_id.encode()) % len(_ATTRIBUTION_VARIANTS)]
+    # "_" is the Worker's reserved "no referrer" id, for submissions stored
+    # before referral ids existed.
+    url = "{}/r/{}?v={}".format(config.WEBSITE_API_URL.rstrip("/"), ref_code or "_", variant_id)
+    return ChannelLink(label=label, url=url)
 
 
 class WebsiteSource(Source):
@@ -100,7 +122,7 @@ class WebsiteSource(Source):
         if quote:
             caption = "{}\n\n{}".format(caption, quote) if caption else quote
 
-        channel_links = [_BRAND_LINK]
+        channel_links = [_brand_link(item_id, submission.get("ref_code"))]
         if submission.get("add_extras"):
             channel_links = cross_promotion_links() + channel_links
 
