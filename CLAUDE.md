@@ -8,7 +8,7 @@ A multi-messenger broadcast tool: build one piece of content (text + photo/video
 
 It's designed to run as a one-shot process triggered by a GitHub Actions cron schedule (`.github/workflows/run-bots.yml`, every 10 min), not as a long-lived service, since free hosting gives no place to run one. State (which items were delivered to which platform) persists in `tokens.json`, which the workflow commits back to the repo after each run.
 
-The repo has no test suite and no lint config.
+The Python side has no test suite; the Worker has one (`cd worker && node --test`, no dependencies). There is no lint config.
 
 ## Commands
 
@@ -20,6 +20,8 @@ python main.py               # runs one polling pass and exits
 ```
 
 Or via Docker: `docker compose up --build` (reads `.env`; see [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml)).
+
+The Worker runs locally with `cd worker && npx wrangler dev --local` (a simulated KV, so it can't touch production data; pass `--var ADMIN_TOKEN:x --var ALLOWED_ORIGIN:http://localhost:<port>` to exercise the admin routes and CORS).
 
 There's no watch/daemon mode — `python main.py` always does exactly one fetch-and-deliver pass, matching how the GitHub Actions workflow invokes it.
 
@@ -47,7 +49,7 @@ senders/
 storage.py                  # tokens.json read/write - per-sender delivery tracking, source-agnostic
 config.py                   # all env vars and defaults, in one place
 worker/                     # Cloudflare Worker backing the website source (separate JS deploy, see worker/README.md)
-docs/                        # GitHub Pages submission wizard (frontend for the website source)
+docs/                        # GitHub Pages site: index.html wizard + guide/faq/pricing/pay-result pages; config.js is the one place the Worker URL lives
 ```
 
 **Extension points, both zero-touch elsewhere in the repo:**
@@ -62,6 +64,10 @@ docs/                        # GitHub Pages submission wizard (frontend for the 
 - `tokens.json` tracks delivery **per platform**, not just per item — a failure on one sender is retried on the next run without re-sending to senders that already succeeded (`storage.py`, `core/orchestrator.py`).
 - Bale and Eitaa senders use raw HTTP instead of a library: `python-bale-bot`'s `Bot.connect()` runs an infinite polling loop before its HTTP session is usable (wrong fit for a one-shot cron run), and no maintained Eitaa library exists. Rubika's `rubka` library is used because it supports one-shot async calls with no polling step.
 
+**Growth and monetization live in the Worker** (details and go-live steps in [worker/README.md](worker/README.md)): trial codes are self-serve (`POST /trial`), a code carries a post allowance as well as a time window, and packs are sold as post credits. Every delivered post ends with a tracked `/r/<ref>?v=<n>` link built in [sources/website/client.py](sources/website/client.py) (wording variants rotate deterministically per submission id); it counts clicks per wording and carries the customer's public referral id. Two things bite: KV's free tier caps *writes* per day, which every submission, trial and counted click spends (`CLICK_SAMPLE_RATE` exists for this), and online payments stay off until a price (`PLAN_PRICES_TOMAN`) *and* `ZARINPAL_MERCHANT_ID` are set.
+
+**Workflow gotcha:** `${{ secrets.X }}` is an empty string, not "unset", when the secret doesn't exist, so `os.environ.get("X", default)` never reaches its default in CI. [.github/workflows/run-bots.yml](.github/workflows/run-bots.yml) uses `${{ secrets.X || 'default' }}` for the ones that have a meaningful default.
+
 ## Known limitations (from README)
 
 - Divar source uses Divar's **unofficial** web API, reverse-engineered from browser traffic — can break if Divar changes it.
@@ -69,3 +75,4 @@ docs/                        # GitHub Pages submission wizard (frontend for the 
 - `telegram_relay` treats every Telegram message as its own post — a multi-photo album becomes several separate posts on destination platforms rather than one grouped album.
 - `website`'s promo codes have no listing/revocation mechanism yet beyond editing the Worker's KV data directly.
 - `website` media is stored as base64 in KV (25MB per-value cap), so very large videos (~20MB+) are rejected.
+- The Telegram and Bale senders only send **photos** (`senders/telegram.py`, `senders/bale.py` filter `item.media` to `type == "photo"`), so a video submission reaches them as text alone; only Rubika and Eitaa deliver video. The wizard and public pages say so.
