@@ -20,8 +20,8 @@ wrangler deploy
 `https://multi-sender-submissions.<your-subdomain>.workers.dev`. You need it
 in two places:
 
-1. **`docs/index.html`** — replace the `API_BASE` constant near the top of
-   the `<script>` block with this URL.
+1. **`docs/config.js`** — set `API_BASE` to this URL (every page reads it
+   from there).
 2. **Repo secrets** (Settings → Secrets and variables → Actions):
    - `WEBSITE_API_URL` = that same URL
    - `WEBSITE_API_TOKEN` = the same value you set for `API_TOKEN` above
@@ -42,9 +42,104 @@ curl -X POST https://<your-worker-url>/promo \
 ```
 
 Give `SUMMER7` (or whatever you name it) to a customer — that's the only
-thing they need to enter besides their own channel's chat id. There's no
-way to look up or list existing codes yet; keep a note of what you create
-if that matters to you.
+thing they need to enter besides their own channel's chat id. Most people
+won't need one from you: the wizard issues trial codes itself (see below).
+There's no way to look up or list existing codes yet; keep a note of what
+you create if that matters to you.
+
+## Self-serve trials, referrals, and the tracked attribution link
+
+Nobody has to create a code by hand any more. Step 3 of the wizard calls
+`POST /trial`, which issues a `TRY-XXXXXX` code on the spot: `TRIAL_DAYS`
+days and `TRIAL_MAX_POSTS` posts (default 3 / 5), one per Telegram handle or
+phone number (Persian digits and `+98`/`0098` spellings are normalised), at
+most `TRIAL_MAX_PER_IP_PER_DAY` per IP. A lost code is **not** re-issued — the
+handle isn't verified, so handing the code back would give it to whoever typed
+someone else's name; they're pointed at support instead. `POST /promo` still
+works for codes you give out yourself (add `"max_posts": N` to cap one).
+
+Every post delivered through a code ends with a link
+`<worker>/r/<ref>?v=<n>`. `<ref>` is the customer's *public* referral id (never
+the promo code itself — that would let anyone post as them) and `<n>` is which
+of the wordings in `sources/website/client.py` was used. The Worker counts the
+click and redirects to the site with `?ref=&v=`; the wizard remembers both for
+30 days and sends them with `/trial`. A referral only pays out when the friend
+sends their **first real post** (not at signup), so minting throwaway trials
+earns nothing: the referrer gets `REFERRAL_BONUS_DAYS` days and
+`REFERRAL_BONUS_POSTS` posts, at most `REFERRAL_MAX_REWARDS` times.
+
+See which wording earns signups, and who is actually referring people:
+
+```bash
+curl https://<your-worker-url>/admin/stats -H "Authorization: Bearer <your ADMIN_TOKEN>"
+# variants.<n> = { clicks, signups, activations, click_to_signup_pct, signup_to_activation_pct }
+# top_referrers = [{ ref, contact, signups, activations }]  <- who to thank / reward
+```
+
+Variant `inv` is the invite link the wizard shows after a post. If you edit a
+wording, give it a **new** id, otherwise old and new copy get averaged.
+
+## Selling packs
+
+The paid model is pay-per-pack credits (see `PLANS` in `src/index.js`), not a
+subscription: a pack is a code with a post allowance and a year of validity
+from its first use. **Nothing is for sale online until you opt in**, so
+`pricing.html` shows "تماس با پشتیبانی" by default.
+
+- **Sales you close through support:** `POST /admin/issue-pack` with
+  `{"plan_id": "pack50", "contact": "@buyer"}` returns a `PK-XXXXXXXX` code to
+  send them.
+- **Online payments (Zarinpal)** turn on automatically once a pack has a price
+  *and* a merchant id is set.
+
+Going live with online payments:
+
+1. Get a Zarinpal merchant id and `wrangler secret put ZARINPAL_MERCHANT_ID`.
+2. Rehearse with fake money first: set the var `ZARINPAL_SANDBOX = "true"`
+   (with a sandbox merchant id), buy a pack on `pricing.html`, and check that
+   `pay-result.html` shows a working code.
+3. **Check the endpoints against Zarinpal's current docs.** The flow was
+   built and tested against a mock of their v4 API (request → StartPay →
+   verify, amounts converted from toman to rials), *not* against the real
+   gateway. If their base URL differs, set `ZARINPAL_BASE`.
+4. Publish prices in `wrangler.toml`, then `wrangler deploy`:
+   ```toml
+   [vars]
+   PLAN_PRICES_TOMAN = '{"pack50": <toman>, "pack200": <toman>}'
+   ```
+5. Remove `ZARINPAL_SANDBOX`.
+
+The order stores the amount at checkout and verifies against *that*, and a
+reloaded callback can't mint a second code.
+
+## Tuning (all optional plain `[vars]`, defaults in `DEFAULTS`)
+
+| Var | Default | Effect |
+|---|---|---|
+| `TRIAL_DAYS` / `TRIAL_MAX_POSTS` | 3 / 5 | What a self-serve trial grants |
+| `TRIAL_MAX_PER_IP_PER_DAY` | 5 | Generous on purpose: mobile carriers put many people behind one IP |
+| `REFERRAL_BONUS_DAYS` / `_POSTS` / `REFERRAL_MAX_REWARDS` | 2 / 2 / 10 | Referral payout and per-referrer cap |
+| `CLICK_SAMPLE_RATE` | 1 | Below 1, only that fraction of clicks is recorded (weighted `1/rate`, so totals stay unbiased) |
+| `PLAN_PRICES_TOMAN` | unset | JSON `{plan_id: toman}`; unset = contact support |
+| `ZARINPAL_SANDBOX` / `ZARINPAL_BASE` | unset | Test mode / endpoint override |
+
+`/plans` serves the live trial and referral numbers, and the pages swap them
+into their copy at load. The static fallback text (what crawlers see) shows the
+defaults, so if you retune the vars, update `guide.html` / `faq.html` /
+`pricing.html` too.
+
+**Mind the KV free tier.** It caps *writes per day* (about 1,000 when this was
+written — check Cloudflare's current limits), and a submission, a trial, and
+every counted click each spend some. If the attribution link spreads, click
+counting can eat the budget that real submissions need: lower
+`CLICK_SAMPLE_RATE`, or move to the Workers Paid plan. Stats are best-effort
+(a failed counter never breaks a redirect), but the shared budget is not.
+
+## Tests
+
+```bash
+cd worker && node --test    # Node 20+, no dependencies, in-memory KV, mocked gateway
+```
 
 ## Rubika auto-reply ("someone found the bot, now what?")
 
